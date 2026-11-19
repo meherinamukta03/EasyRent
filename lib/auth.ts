@@ -1,41 +1,25 @@
-import { mongodbAdapter } from "@better-auth/mongo-adapter"
-import { betterAuth } from "better-auth"
-import { MongoClient } from "mongodb"
+import { betterAuth } from "better-auth";
+import { MongoClient } from "mongodb";
+import { mongodbAdapter } from "@better-auth/mongo-adapter";
 
-const mongoUri = process.env.MONGODB_URI ?? process.env.DATABASE_URL
-
-if (!mongoUri) {
-  throw new Error(
-    "Missing MongoDB connection string. Add MONGODB_URI to your .env file to enable authentication."
-  )
-}
-
-const client = new MongoClient(mongoUri)
-const db = client.db("EasyReant")
+const client = new MongoClient(process.env.BETTER_AUTH_DB_URI as string );
+const db = client.db('EasyRent');
 
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL,
-  emailAndPassword: {
-    enabled: true,
-    minPasswordLength: 6,
-  },
+
+baseURL: process.env.BETTER_AUTH_URL,
+
   database: mongodbAdapter(db, {
     client,
   }),
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+   emailAndPassword: { 
+    enabled: true, 
+  }, 
+
+   socialProviders: {
+        google: { 
+            clientId: process.env.GOOGLE_CLIENT_ID as string, 
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string, 
+        }, 
     },
-  },
-  user: {
-    additionalFields: {
-      role: {
-        type: "string",
-        required: false,
-        defaultValue: "customer",
-        input: false,
-      },
-    },
-  },
-})
+});
