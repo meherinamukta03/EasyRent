@@ -145,7 +145,7 @@ export default function Navbar() {
           ) : user ? (
             <>
               <Link
-                href="/dashboard"
+                href={`/dashboard/${session?.user?.role || 'customer'}`}
                 className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors duration-200 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
                 <FaTachometerAlt aria-hidden="true" className="size-3.5" />
@@ -301,7 +301,7 @@ export default function Navbar() {
                 </Link>
 
                 <Link
-                  href="/dashboard"
+                  href={`/dashboard/${session?.user?.role || 'customer'}`}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition-colors duration-200 hover:bg-emerald-700 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
