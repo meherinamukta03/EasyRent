@@ -31,10 +31,10 @@ export default function RootLayout({
     >
       <body>
         <Navbar></Navbar>
-        <ThemeProvider>
+        
           {children}
           <Toaster />
-        </ThemeProvider>
+       
       </body>
     </html>
   )

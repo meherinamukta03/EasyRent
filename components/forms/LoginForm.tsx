@@ -15,7 +15,8 @@ import {
 import { FcGoogle } from "react-icons/fc"
 
 import { Button } from "@/components/ui/button"
-import { authClient } from "@/lib/auth-client"
+import { authClient, signIn } from "@/lib/auth-client"
+import { toast } from "../ui/toast"
 
 interface AuthFormData {
   email: string
@@ -62,7 +63,34 @@ export default function LoginForm() {
 
   console.log("Login successful:", SignInResponse)
 }
+const handleGoogleLogin = async () => {
+  try {
+    const result = await signIn.social({
+      provider: "google",
+      callbackURL: "/",
+      // errorCallbackURL: "/login",
+    });
 
+    if (result.error) {
+      toast.add({
+        title: "Google login failed!",
+        type: "error",
+      });
+    } else {
+      toast.add({
+        title: "Google login successful!",
+        type: "success",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+
+    toast.add({
+      title: "Google login failed!",
+      type: "error",
+    });
+  }
+};
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -180,6 +208,7 @@ export default function LoginForm() {
         type="button"
         variant="outline"
         className="h-12 w-full rounded-xl"
+        onClick={handleGoogleLogin}
       >
         <FcGoogle className="text-xl" />
         Continue with Google

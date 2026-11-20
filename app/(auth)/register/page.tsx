@@ -7,7 +7,7 @@ import RegisterForm from "@/components/forms/RegisterForm"
 export const metadata: Metadata = {
   title: "Create your account | EasyRent",
   description:
-    "Join EasyRent and find the right equipment for your projects. Create a free customer account in seconds.",
+    "Join EasyRent and find the right equipment for your projects, or list your own gear and earn from it.",
 }
 
 const benefits = [

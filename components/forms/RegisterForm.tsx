@@ -14,7 +14,7 @@ import {
   FaEyeSlash,
   FaArrowRight,
 } from "react-icons/fa"
-import { FcGoogle } from "react-icons/fc"
+
 
 import { Button } from "@/components/ui/button"
 import { authClient } from "@/lib/auth-client"
@@ -24,6 +24,7 @@ interface AuthFormData {
   email: string
   image: string
   password: string
+  role: "customer" | "owner"
 }
 
 export default function RegisterForm() {
@@ -57,6 +58,7 @@ export default function RegisterForm() {
       email: formData.get("email") as string,
       image: formData.get("image") as string,
       password: formData.get("password") as string,
+      role: formData.get("role") === "owner" ? "owner" : "customer",
     }
 
     console.log("Register form data:", data)
@@ -66,6 +68,8 @@ export default function RegisterForm() {
             name: data.name as string,
             email: data.email,
             password: data.password,
+            image: data.image || undefined,
+            role: data.role,
             callbackURL: "/",
          
         });
@@ -109,6 +113,60 @@ export default function RegisterForm() {
 
       {/* Register Form */}
       <form onSubmit={handleSubmit} className="mt-7 space-y-5">
+
+        {/* Account type */}
+        <fieldset>
+          <legend className="mb-2 block text-sm font-medium text-slate-700">
+            Joining EasyRent as
+          </legend>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="group flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3.5 transition-colors hover:border-emerald-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/60 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-emerald-600 has-[:focus-visible]:ring-offset-2">
+              <input
+                type="radio"
+                name="role"
+                value="customer"
+                defaultChecked
+                className="sr-only"
+              />
+
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition-colors group-has-[:checked]:bg-emerald-600 group-has-[:checked]:text-white">
+                <FaUser aria-hidden="true" className="size-4" />
+              </span>
+
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-slate-900">
+                  Customer
+                </span>
+                <span className="mt-0.5 block text-xs leading-5 text-slate-500">
+                  Book gear from local owners.
+                </span>
+              </span>
+            </label>
+
+            <label className="group flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3.5 transition-colors hover:border-emerald-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/60 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-emerald-600 has-[:focus-visible]:ring-offset-2">
+              <input
+                type="radio"
+                name="role"
+                value="owner"
+                className="sr-only"
+              />
+
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition-colors group-has-[:checked]:bg-emerald-600 group-has-[:checked]:text-white">
+                <FaTools aria-hidden="true" className="size-4" />
+              </span>
+
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-slate-900">
+                  Owner
+                </span>
+                <span className="mt-0.5 block text-xs leading-5 text-slate-500">
+                  Earn by renting out your gear.
+                </span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
 
         {/* Name */}
         <div>
@@ -246,15 +304,7 @@ export default function RegisterForm() {
         <hr className="flex-1 border-slate-200" />
       </div>
 
-      {/* Google Button - UI only */}
-      <Button
-        type="button"
-        variant="outline"
-        className="h-12 w-full rounded-xl"
-      >
-        <FcGoogle className="text-xl" />
-        Continue with Google
-      </Button>
+      
 
       {/* Login Link */}
       <p className="mt-6 text-center text-sm text-slate-600">

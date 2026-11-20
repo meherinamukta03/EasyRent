@@ -1,25 +1,48 @@
+
 import { betterAuth } from "better-auth";
 import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 
-const client = new MongoClient(process.env.BETTER_AUTH_DB_URI as string );
-const db = client.db('EasyRent');
+const client = new MongoClient(process.env.BETTER_AUTH_DB_URI as string);
+const db = client.db("EasyRent");
 
 export const auth = betterAuth({
-
-baseURL: process.env.BETTER_AUTH_URL,
+  baseURL: process.env.BETTER_AUTH_URL,
 
   database: mongodbAdapter(db, {
     client,
   }),
-   emailAndPassword: { 
-    enabled: true, 
-  }, 
 
-   socialProviders: {
-        google: { 
-            clientId: process.env.GOOGLE_CLIENT_ID as string, 
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string, 
-        }, 
+  emailAndPassword: {
+    enabled: true,
+  },
+
+
+
+     user: {
+       additionalFields: {
+          role: {
+              type: ['customer','owner','admin'],
+              input: true,
+              defaultValue:'customer'
+            } 
+        }
+    }
+   ,
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     },
+  },
+
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"],
+    
+      requireLocalEmailVerified: false,
+    },
+  },
+
 });

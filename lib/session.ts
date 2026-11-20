@@ -14,5 +14,5 @@ export async function getServerSession() {
 export const getClientSession = async () => {
   const session = await authClient.getSession()
 
-  return session.data
+  return session
 }
