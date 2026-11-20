@@ -51,6 +51,7 @@ export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const { data: session, isPending } = authClient.useSession()
+  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 

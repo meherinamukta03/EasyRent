@@ -14,10 +14,11 @@ import {
   FaEyeSlash,
   FaArrowRight,
 } from "react-icons/fa"
-
+import { useRouter } from 'next/navigation'
 
 import { Button } from "@/components/ui/button"
 import { authClient } from "@/lib/auth-client"
+import { error } from "console"
 
 interface AuthFormData {
   name: string
@@ -47,6 +48,8 @@ export default function RegisterForm() {
     }))
   }
 
+  const router = useRouter()
+
   // Handle form submission
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -70,9 +73,15 @@ export default function RegisterForm() {
             password: data.password,
             image: data.image || undefined,
             role: data.role,
+        
             callbackURL: "/",
          
         });
+
+        if(!signUpError){
+       router.refresh()
+       router.push('/')
+        }
 
         console.log("signup response", signUpResponse, signUpError)
 
