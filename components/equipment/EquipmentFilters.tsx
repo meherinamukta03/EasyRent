@@ -97,6 +97,10 @@ export default function EquipmentFilters({
                 {category}
               </option>
             ))}
+            {filters.category &&
+            !EQUIPMENT_CATEGORIES.some((value) => value === filters.category) ? (
+              <option value={filters.category}>{filters.category}</option>
+            ) : null}
           </select>
         </div>
 

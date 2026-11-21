@@ -22,6 +22,12 @@ export interface Equipment {
   [key: string]: unknown;
 }
 
+/** Approved-equipment count for a single stored category value. */
+export interface EquipmentCategoryCount {
+  category: string;
+  count: number;
+}
+
 export type EquipmentStatusTone = "approved" | "pending" | "rejected";
 
 export type EquipmentAvailability = "available" | "unavailable";
@@ -37,6 +43,8 @@ export interface PublicEquipmentFilters {
   maxPrice?: string | number;
   availability?: EquipmentAvailability | "";
   sort?: PublicEquipmentSort;
+  /** Optional cap applied by MongoDB in the backend query (e.g. 6 for featured). */
+  limit?: number;
 }
 
 export function getEquipmentStatusTone(status?: string): EquipmentStatusTone {

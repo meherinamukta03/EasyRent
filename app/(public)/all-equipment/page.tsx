@@ -9,12 +9,24 @@ export const metadata: Metadata = {
     "Browse approved equipment available for rent. Search by name or location and filter by category and rental type.",
 };
 
-export default async function AllEquipmentPage() {
+interface AllEquipmentPageProps {
+  searchParams: Promise<{ category?: string | string[] }>;
+}
+
+export default async function AllEquipmentPage({
+  searchParams,
+}: AllEquipmentPageProps) {
+  const { category } = await searchParams;
+  const selectedCategory =
+    typeof category === "string" ? category.trim() : "";
+
   let initialEquipment: Awaited<ReturnType<typeof fetchPublicEquipment>> = [];
   let initialError = false;
 
   try {
-    initialEquipment = await fetchPublicEquipment();
+    initialEquipment = await fetchPublicEquipment(
+      selectedCategory ? { category: selectedCategory } : {}
+    );
   } catch {
     initialError = true;
   }
@@ -40,6 +52,7 @@ export default async function AllEquipmentPage() {
         <AllEquipmentCatalog
           initialEquipment={initialEquipment}
           initialError={initialError}
+          initialCategory={selectedCategory}
         />
       </section>
     </main>

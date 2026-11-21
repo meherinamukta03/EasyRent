@@ -13,6 +13,19 @@ const AVAILABILITY_VALUES: EquipmentAvailability[] = [
   "unavailable",
 ];
 
+// Mirrors the backend cap so only sane values reach the MongoDB query.
+const MAX_LIMIT = 50;
+
+function parseLimit(value: string | null) {
+  if (!value) return undefined;
+
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+
+  return Math.min(Math.floor(parsed), MAX_LIMIT);
+}
+
 function parsePrice(value: string | null) {
   if (!value) return undefined;
 
@@ -41,6 +54,7 @@ export async function GET(request: Request) {
     sort: SORT_VALUES.includes(sort as PublicEquipmentSort)
       ? (sort as PublicEquipmentSort)
       : undefined,
+    limit: parseLimit(searchParams.get("limit")),
   };
 
   try {

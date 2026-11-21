@@ -19,6 +19,13 @@ const PLACEHOLDER_IMAGE = "/images/equipment-placeholder.svg";
 
 interface EquipmentCardProps {
   equipment: Equipment;
+  /**
+   * Opt-in auth gate for sections that require a session before opening
+   * details (e.g. Featured Equipment). Guests are sent to the login page.
+   */
+  requireAuth?: boolean;
+  /** Whether the current visitor has an active session. */
+  isAuthenticated?: boolean;
 }
 
 function formatPrice(value?: number) {
@@ -29,12 +36,20 @@ function formatPrice(value?: number) {
   return `৳${value.toLocaleString("en-US")}`;
 }
 
-export default function EquipmentCard({ equipment }: EquipmentCardProps) {
+export default function EquipmentCard({
+  equipment,
+  requireAuth = false,
+  isAuthenticated = false,
+}: EquipmentCardProps) {
   const [imageFailed, setImageFailed] = useState(false);
 
   const available = isEquipmentAvailable(equipment.quantity);
   const imageSrc =
     !equipment.image || imageFailed ? PLACEHOLDER_IMAGE : equipment.image;
+
+  const detailsHref = `/all-equipment/${equipment._id}`;
+  const viewDetailsHref =
+    requireAuth && !isAuthenticated ? "/login" : detailsHref;
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.03] transition duration-300 hover:-translate-y-1 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-900/[0.07]">
@@ -108,7 +123,12 @@ export default function EquipmentCard({ equipment }: EquipmentCardProps) {
           </div>
 
           <Link
-            href={`/all-equipment/${equipment._id}`}
+            href={viewDetailsHref}
+            aria-label={
+              requireAuth && !isAuthenticated
+                ? "Log in to view equipment details"
+                : `View details for ${equipment.name}`
+            }
             className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition hover:bg-emerald-700 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 focus-visible:outline-none"
           >
             View Details

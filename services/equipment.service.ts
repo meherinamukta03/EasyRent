@@ -1,5 +1,6 @@
 import type {
   Equipment,
+  EquipmentCategoryCount,
   PublicEquipmentFilters,
 } from "@/types/equipment";
 
@@ -42,6 +43,8 @@ function buildPublicEquipmentQuery(filters: PublicEquipmentFilters) {
   }
 
   addParam("sort", filters.sort);
+  // Forwarded to the backend, which applies it as MongoDB cursor.limit(n).
+  addParam("limit", filters.limit);
 
   return params.toString();
 }
@@ -65,6 +68,23 @@ export async function fetchPublicEquipment(
   }
 
   return Array.isArray(data) ? (data as Equipment[]) : [];
+}
+
+// Approved equipment counts per category, aggregated in MongoDB by the backend.
+export async function fetchPublicCategoryCounts(): Promise<
+  EquipmentCategoryCount[]
+> {
+  const response = await fetch(`${getApiBaseUrl()}/public/categories`, {
+    cache: "no-store",
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(data?.message || "Failed to load equipment categories");
+  }
+
+  return Array.isArray(data) ? (data as EquipmentCategoryCount[]) : [];
 }
 
 // Public details fetch by id. Only approved equipment is returned.

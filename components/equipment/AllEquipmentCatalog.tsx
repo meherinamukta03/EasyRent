@@ -24,6 +24,7 @@ const DEFAULT_FILTERS: EquipmentFilterState = {
 interface AllEquipmentCatalogProps {
   initialEquipment: Equipment[];
   initialError?: boolean;
+  initialCategory?: string;
 }
 
 interface CatalogRequest {
@@ -68,9 +69,13 @@ function CatalogSkeleton() {
 export default function AllEquipmentCatalog({
   initialEquipment,
   initialError = false,
+  initialCategory = "",
 }: AllEquipmentCatalogProps) {
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<EquipmentFilterState>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<EquipmentFilterState>(() => ({
+    ...DEFAULT_FILTERS,
+    category: initialCategory,
+  }));
   const [equipment, setEquipment] = useState<Equipment[]>(initialEquipment);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(
