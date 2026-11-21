@@ -9,19 +9,17 @@ import {
   EQUIPMENT_CONDITIONS,
   EQUIPMENT_RENTAL_TYPES,
 } from "@/constants/equipment";
-import type { Equipment } from "@/types/equipment";
+import {
+  fetchPublicEquipment,
+  fetchPublicEquipmentById,
+  getApiBaseUrl,
+} from "@/services/equipment.service";
+import type {
+  Equipment,
+  PublicEquipmentFilters,
+} from "@/types/equipment";
 
 const EQUIPMENT_PAGE_PATH = "/dashboard/owner/my-equipment";
-
-function getApiBaseUrl() {
-  const api = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-  if (!api) {
-    throw new Error("Equipment API is not configured");
-  }
-
-  return api;
-}
 
 async function requireOwner() {
   const session = await getServerSession();
@@ -190,6 +188,16 @@ export const updateMyEquipment = async (formData: FormData) => {
 
   return result;
 };
+
+// Public catalogue fetch. The backend only returns approved equipment.
+export const getPublicEquipment = async (
+  filters: PublicEquipmentFilters = {}
+): Promise<Equipment[]> => fetchPublicEquipment(filters);
+
+// Public details fetch. Returns only approved equipment.
+export const getPublicEquipmentById = async (
+  id: string
+): Promise<Equipment | null> => fetchPublicEquipmentById(id);
 
 export const deleteMyEquipment = async (id: string) => {
   const { email } = await requireOwner();
