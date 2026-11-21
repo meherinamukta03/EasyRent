@@ -7,6 +7,7 @@ import {
   CalendarClock,
   CheckCircle2,
   MapPin,
+  Sparkles,
   XCircle,
 } from "lucide-react";
 
@@ -26,6 +27,8 @@ interface EquipmentCardProps {
   requireAuth?: boolean;
   /** Whether the current visitor has an active session. */
   isAuthenticated?: boolean;
+  /** Highlights freshly listed equipment (e.g. the recent listings section). */
+  showNewBadge?: boolean;
 }
 
 function formatPrice(value?: number) {
@@ -40,6 +43,7 @@ export default function EquipmentCard({
   equipment,
   requireAuth = false,
   isAuthenticated = false,
+  showNewBadge = false,
 }: EquipmentCardProps) {
   const [imageFailed, setImageFailed] = useState(false);
 
@@ -81,6 +85,13 @@ export default function EquipmentCard({
           )}
           {available ? "Available" : "Unavailable"}
         </span>
+
+        {showNewBadge ? (
+          <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[0.7rem] font-bold tracking-wide text-white uppercase shadow-sm ring-1 ring-white/20">
+            <Sparkles className="size-3" aria-hidden="true" />
+            New
+          </span>
+        ) : null}
       </div>
 
       <div className="flex flex-1 flex-col p-5">
