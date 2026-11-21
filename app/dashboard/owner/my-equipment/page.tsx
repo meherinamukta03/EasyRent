@@ -1,108 +1,42 @@
-
-"use client";
+import Link from "next/link";
+import { PackagePlus } from "lucide-react";
 
 import MyEquipmentTable from "@/components/owner/MyEquipmentTable";
-import { toast } from "@/components/ui/toast";
-import { Toast } from "@base-ui/react";
-import { useEffect, useState } from "react";
+import { getMyEquipment } from "@/lib/actions/equipment";
+import { requireRole } from "@/lib/auth-server";
 
+export default async function MyEquipmentPage() {
+  await requireRole("owner");
 
-
-export interface Equipment {
-  _id: string;
-  name: string;
-  category: string;
-  rentalPrice: number;
-  quantity: number;
-  status: "pending" | "approved" | "rejected";
-}
-
-export default function MyEquipmentPage() {
-  const [equipment, setEquipment] = useState<Equipment[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchMyEquipment = async () => {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_BASE_URL}/api/equipment/my-equipment`,
-          {
-            credentials: "include",
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch equipment");
-        }
-
-        const data = await response.json();
-
-        setEquipment(data.data || data);
-      } catch (error) {
-        console.error(error);
-        toast.error("Failed to load equipment");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMyEquipment();
-  }, []);
-
-  const handleDelete = async (id: string) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this equipment?"
-    );
-
-    if (!confirmed) return;
-
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SERVER_BASE_URL}/api/equipment/${id}`,
-        {
-          method: "DELETE",
-          credentials: "include",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Delete failed");
-      }
-
-      setEquipment((previous) =>
-        previous.filter((item) => item._id !== id)
-      );
-
-      toast.success("Equipment deleted successfully");
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to delete equipment");
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex min-h-60 items-center justify-center">
-        <p className="text-gray-500">Loading equipment...</p>
-      </div>
-    );
-  }
+  const equipments = await getMyEquipment();
 
   return (
-    <section className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">
-          My Equipment
-        </h1>
-        <p className="mt-2 text-sm text-slate-500">
-          Manage all equipment you have added for rental.
-        </p>
+    <div className="space-y-6 p-4 md:p-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="mb-1 text-sm font-semibold text-emerald-600">
+            OWNER DASHBOARD
+          </p>
+
+          <h1 className="text-2xl font-bold text-slate-800 md:text-3xl">
+            My Equipment
+          </h1>
+
+          <p className="mt-1 text-sm text-slate-500">
+            View, update and manage the equipment you have listed.
+          </p>
+        </div>
+
+        <Link
+          href="/dashboard/owner/add-equipment"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+        >
+          <PackagePlus className="h-4 w-4" />
+          Add Equipment
+        </Link>
       </div>
 
-      <MyEquipmentTable
-        equipment={equipment}
-        onDelete={handleDelete}
-      />
-    </section>
+      <MyEquipmentTable equipment={equipments} />
+    </div>
   );
 }

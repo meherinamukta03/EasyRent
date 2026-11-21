@@ -31,7 +31,11 @@ export function getDashboardPath(role: unknown) {
   return ROLE_DASHBOARD_PATHS[normalizeUserRole(role)]
 }
 
-const hasDatabase = Boolean(process.env.MONGODB_URI ?? process.env.DATABASE_URL)
+const hasDatabase = Boolean(
+  process.env.BETTER_AUTH_DB_URI ??
+    process.env.MONGODB_URI ??
+    process.env.DATABASE_URL
+)
 
 /**
  * Reads the current Better Auth session on the server.

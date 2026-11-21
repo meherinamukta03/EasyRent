@@ -78,12 +78,7 @@ const menuItemsByRole: Record<UserRole, MenuItem[]> = {
       url: "/dashboard/owner/my-rentals",
       icon: CalendarCheck,
     },
-    {
-      id: "owner-analytics",
-      name: "Analytics",
-      url: "/dashboard/owner/analytics",
-      icon: BarChart3,
-    },
+    
     {
       id: "owner-profile",
       name: "Profile",
