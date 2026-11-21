@@ -1,9 +1,11 @@
 "use client";
 
-import { CreditCard } from "lucide-react";
+import { useState } from "react";
+import { CreditCard, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { showInfo } from "@/components/ui/toast";
+import { showError, showSuccess } from "@/components/ui/toast";
+import { createCheckoutSession } from "@/lib/actions/customer";
 import { formatCurrency } from "@/lib/rental";
 
 interface PayButtonProps {
@@ -11,15 +13,25 @@ interface PayButtonProps {
   bookingId: string;
 }
 
-/**
- * Placeholder for the future Stripe checkout entry point. No payment request
- * is made yet — the booking stays with a Pending payment status.
- */
 export default function PayButton({ amount, bookingId }: PayButtonProps) {
-  function handlePay() {
-    showInfo(
-      `Stripe checkout for booking ${bookingId} will be available soon. Your payment is still Pending.`
-    );
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  async function handlePay() {
+    if (isRedirecting) return;
+
+    setIsRedirecting(true);
+
+    try {
+      const checkout = await createCheckoutSession(bookingId);
+
+      showSuccess("Opening secure Stripe checkout...");
+      window.location.href = checkout.checkoutUrl;
+    } catch (error) {
+      showError(
+        error instanceof Error ? error.message : "Could not start checkout"
+      );
+      setIsRedirecting(false);
+    }
   }
 
   return (
@@ -28,22 +40,28 @@ export default function PayButton({ amount, bookingId }: PayButtonProps) {
         Ready to pay?
       </p>
       <p className="mt-2 text-sm leading-6 text-slate-600">
-        Pay securely to confirm your rental. You will be taken to the payment
-        checkout when it is enabled.
+        Pay securely through Stripe to confirm your rental. Your booking stays
+        Pending until payment is completed.
       </p>
 
       <Button
         type="button"
         size="lg"
-        onClick={handlePay}
+        onClick={() => void handlePay()}
+        disabled={isRedirecting}
         className="mt-4 h-12 w-full text-sm font-semibold"
       >
-        <CreditCard className="size-4" aria-hidden="true" />
-        Pay {formatCurrency(amount)}
+        {isRedirecting ? (
+          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+        ) : (
+          <CreditCard className="size-4" aria-hidden="true" />
+        )}
+        {isRedirecting ? "Opening checkout..." : `Pay ${formatCurrency(amount)}`}
       </Button>
 
       <p className="mt-3 text-center text-xs text-slate-500">
-        Stripe checkout connection coming soon — no charge is made today.
+        You will be redirected to Stripe. No charge is made until you complete
+        checkout.
       </p>
     </div>
   );

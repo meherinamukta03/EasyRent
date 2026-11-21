@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { CalendarDays, Loader2, Package } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -20,6 +19,7 @@ import { showError, showSuccess } from "@/components/ui/toast";
 import {
   checkBookingAvailability,
   createBooking,
+  createCheckoutSession,
 } from "@/lib/actions/customer";
 import { calculateRentalQuote, formatCurrency } from "@/lib/rental";
 import type { AvailabilityResult } from "@/services/equipment.service";
@@ -47,7 +47,6 @@ function todayInputValue() {
 }
 
 export default function BookingModal({ equipment }: BookingModalProps) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -198,10 +197,12 @@ export default function BookingModal({ equipment }: BookingModalProps) {
         notes: notes.trim(),
       });
 
-      showSuccess("Booking request submitted");
+      // Only leave for Stripe once a real Checkout URL has been returned.
+      const checkout = await createCheckoutSession(booking._id);
+
+      showSuccess("Booking created. Redirecting to secure checkout...");
       setOpen(false);
-      router.push(`/payment/${booking._id}`);
-      router.refresh();
+      window.location.href = checkout.checkoutUrl;
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to create booking";

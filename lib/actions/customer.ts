@@ -169,6 +169,46 @@ export async function checkBookingAvailability(
   return fetchEquipmentAvailability(equipmentId, startDate, endDate);
 }
 
+/**
+ * Creates a Stripe Checkout Session for a booking that already exists. The
+ * backend re-reads the booking and its server-calculated amount; the browser
+ * only sends the booking id plus the session-derived email.
+ */
+export async function createCheckoutSession(
+  bookingId: string
+): Promise<{ checkoutUrl: string; sessionId: string }> {
+  const user = await getCurrentCustomer();
+
+  if (!bookingId) {
+    throw new Error("Invalid booking");
+  }
+
+  const response = await fetch(`${getApiBaseUrl()}/create-checkout-session`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ bookingId, customerEmail: user.email }),
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      typeof data?.message === "string"
+        ? data.message
+        : "Failed to start secure checkout"
+    );
+  }
+
+  if (typeof data?.checkoutUrl !== "string" || !data.checkoutUrl) {
+    throw new Error("Stripe did not return a checkout URL");
+  }
+
+  return {
+    checkoutUrl: data.checkoutUrl,
+    sessionId: typeof data.sessionId === "string" ? data.sessionId : "",
+  };
+}
+
 export async function getMyBookingById(
   id: string
 ): Promise<RentalBooking | null> {

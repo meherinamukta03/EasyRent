@@ -21,6 +21,11 @@ export interface RentalBooking {
   notes?: string;
   bookingStatus?: string;
   paymentStatus?: string;
+  stripeSessionId?: string;
+  stripeCurrency?: string;
+  stripeCheckoutUrl?: string;
+  stripePaymentIntentId?: string;
+  paidAt?: string;
   createdAt?: string;
 }
 
