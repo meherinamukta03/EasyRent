@@ -12,10 +12,10 @@ import {
   FaEye,
   FaEyeSlash,
   FaArrowRight,
+  FaSpinner,
 } from "react-icons/fa"
-import { useRouter } from "next/navigation"
-
 import { Button } from "@/components/ui/button"
+import { toast } from "@/components/ui/toast"
 import { authClient } from "@/lib/auth-client"
 
 interface AuthFormData {
@@ -34,6 +34,7 @@ export default function RegisterForm() {
   })
 
   const [showPassword, setShowPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Handle input changes
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
@@ -45,41 +46,57 @@ export default function RegisterForm() {
     }))
   }
 
-  const router = useRouter()
-
   // Handle form submission
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
+    if (isSubmitting) return
+    setIsSubmitting(true)
+
     const formData = new FormData(event.currentTarget)
 
     const data: AuthFormData = {
-      name: formData.get("name") as string,
-      email: formData.get("email") as string,
-      image: formData.get("image") as string,
-      password: formData.get("password") as string,
+      name: String(formData.get("name") || "").trim(),
+      email: String(formData.get("email") || "").trim(),
+      image: String(formData.get("image") || "").trim(),
+      password: String(formData.get("password") || ""),
     }
 
-    console.log("Register form data:", data)
-
-    const { data: signUpResponse, error: signUpError } =
-      await authClient.signUp.email({
-        name: data.name as string,
+    try {
+      const { error } = await authClient.signUp.email({
+        name: data.name,
         email: data.email,
         password: data.password,
         image: data.image || undefined,
 
         // Role is never sent by the browser. The server assigns "customer" to
         // every new account; only an admin can promote a user to owner/admin.
-        callbackURL: "/",
+        callbackURL: "/dashboard/redirect",
       })
 
-    if (!signUpError) {
-      router.refresh()
-      router.push("/dashboard/redirect")
-    }
+      if (error) {
+        toast.add({
+          title: error.message || "Could not create the account. Please try again.",
+          type: "error",
+        })
+        return
+      }
 
-    console.log("signup response", signUpResponse, signUpError)
+      toast.add({ title: "Account created successfully!", type: "success" })
+
+      // Full navigation makes sure the new session cookie is picked up.
+      window.location.href = "/dashboard/redirect"
+    } catch (signupError) {
+      toast.add({
+        title:
+          signupError instanceof Error
+            ? signupError.message
+            : "Could not create the account. Please try again.",
+        type: "error",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -251,10 +268,20 @@ export default function RegisterForm() {
         {/* Register Button */}
         <Button
           type="submit"
-          className="h-12 w-full rounded-xl bg-emerald-600 font-semibold hover:bg-emerald-700"
+          disabled={isSubmitting}
+          className="h-12 w-full rounded-xl bg-emerald-600 font-semibold hover:bg-emerald-700 disabled:opacity-70"
         >
-          Create Account
-          <FaArrowRight className="ml-2" />
+          {isSubmitting ? (
+            <>
+              <FaSpinner className="animate-spin" aria-hidden="true" />
+              Creating account…
+            </>
+          ) : (
+            <>
+              Create Account
+              <FaArrowRight className="ml-2" />
+            </>
+          )}
         </Button>
       </form>
 
