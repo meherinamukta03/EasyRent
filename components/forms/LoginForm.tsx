@@ -16,6 +16,7 @@ import {
 import { FcGoogle } from "react-icons/fc"
 
 import { Button } from "@/components/ui/button"
+import { isEmailRegistered } from "@/lib/actions/auth"
 import { authClient } from "@/lib/auth-client"
 import { getDashboardPath } from "@/lib/roles"
 import { toast } from "../ui/toast"
@@ -62,6 +63,19 @@ export default function LoginForm() {
       })
 
       if (error) {
+        // An account that does not exist yet is sent to registration with a
+        // clear toast. Existing accounts keep the normal sign-in error.
+        const registered = await isEmailRegistered(data.email as string)
+
+        if (!registered) {
+          router.push(
+            "/register?error=registration_required&error_description=" +
+              encodeURIComponent("Please register first before signing in.")
+          )
+          router.refresh()
+          return
+        }
+
         toast.add({
           title: error.message || "Invalid email or password.",
           type: "error",
@@ -103,11 +117,11 @@ export default function LoginForm() {
       // Use the configured client so baseURL/plugins match the rest of the app.
       const result = await authClient.signIn.social({
         provider: "google",
-        // Existing users land on a role-aware redirect handler. Any failure
-        // (including "register first") returns to the login page, where the
-        // reason is shown and a Register link is already available.
+        // Existing users land on a role-aware redirect handler. Unregistered
+        // Google emails are rejected by Better Auth and sent to /register
+        // with a "please register first" toast.
         callbackURL: "/dashboard/redirect",
-        errorCallbackURL: "/login",
+        errorCallbackURL: "/register",
       })
 
       if (result.error) {

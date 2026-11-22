@@ -78,3 +78,30 @@ export async function updateProfile(
     address,
   };
 }
+
+/**
+ * Clears only the signed-in user's profile photo. The user is derived from the
+ * server session, so no one can clear another account's image.
+ */
+export async function removeProfileImage(): Promise<ProfileUpdateResult> {
+  const session = await requireUser();
+  const currentUser = session.user as typeof session.user & {
+    phone?: string | null;
+    address?: string | null;
+  };
+
+  await auth.api.updateUser({
+    headers: await headers(),
+    body: { image: null },
+  });
+
+  revalidatePath("/dashboard/profile");
+
+  return {
+    name: currentUser.name || "",
+    email: currentUser.email,
+    image: null,
+    phone: currentUser.phone || "",
+    address: currentUser.address || "",
+  };
+}

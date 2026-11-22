@@ -17,6 +17,7 @@ import {
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { authClient } from "@/lib/auth-client"
+import { PROFILE_UPDATED_EVENT } from "@/lib/profile-events"
 import { cn } from "@/lib/utils"
 import { getDashboardPath } from "@/lib/roles"
 
@@ -51,7 +52,7 @@ function getInitials(name?: string | null) {
 export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
-  const { data: session, isPending } = authClient.useSession()
+  const { data: session, isPending, refetch } = authClient.useSession()
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
@@ -60,6 +61,20 @@ export default function Navbar() {
   const displayName = user?.name || user?.email || "EasyRent user"
   const initials = getInitials(user?.name || user?.email)
   const dashboardHref = getDashboardPath(user?.role) ?? "/login"
+
+  // Profile edits happen in a Server Action, so refresh the client session
+  // here to show the new picture immediately (desktop + mobile avatars).
+  useEffect(() => {
+    function handleProfileUpdated() {
+      void refetch()
+    }
+
+    window.addEventListener(PROFILE_UPDATED_EVENT, handleProfileUpdated)
+
+    return () => {
+      window.removeEventListener(PROFILE_UPDATED_EVENT, handleProfileUpdated)
+    }
+  }, [refetch])
 
   useEffect(() => {
     if (!isMobileMenuOpen) {

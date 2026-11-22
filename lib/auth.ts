@@ -5,6 +5,9 @@ import { mongodbAdapter } from "@better-auth/mongo-adapter"
 const client = new MongoClient(process.env.BETTER_AUTH_DB_URI as string)
 const db = client.db("EasyRent")
 
+/** Shared connection for server-side checks (no new client/collection). */
+export const easyrentDb = db
+
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
 
