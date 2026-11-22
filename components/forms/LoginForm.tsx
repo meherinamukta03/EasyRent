@@ -1,8 +1,8 @@
-
 "use client"
 
 import { useState, type ChangeEvent, type FormEvent } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import {
   FaTools,
@@ -11,25 +11,24 @@ import {
   FaEye,
   FaEyeSlash,
   FaArrowRight,
+  FaSpinner,
 } from "react-icons/fa"
 import { FcGoogle } from "react-icons/fc"
 
 import { Button } from "@/components/ui/button"
-import { authClient, signIn } from "@/lib/auth-client"
+import { authClient } from "@/lib/auth-client"
+import { getDashboardPath } from "@/lib/roles"
 import { toast } from "../ui/toast"
 
-interface AuthFormData {
-  email: string
-  password: string
-}
-
 export default function LoginForm() {
+  const router = useRouter()
   const [values, setValues] = useState({
     email: "",
     password: "",
   })
 
   const [showPassword, setShowPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Handle input changes
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
@@ -42,55 +41,97 @@ export default function LoginForm() {
   }
 
   // Handle form submission
- async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-  event.preventDefault()
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
 
-  const formData = new FormData(event.currentTarget)
+    // Ignore repeated clicks while the first request is still in flight.
+    if (isSubmitting) return
 
-  const data = Object.fromEntries(formData.entries())
+    setIsSubmitting(true)
 
-  const { data: SignInResponse, error } = await authClient.signIn.email({
-    email: data.email as string,
-    password: data.password as string,
-    rememberMe: true,
-    callbackURL: "/",
-  })
+    try {
+      const formData = new FormData(event.currentTarget)
+      const data = Object.fromEntries(formData.entries())
 
-  if (error) {
-    console.log(error.message)
-    return
-  }
+      // No callbackURL here: the redirect is decided only after we have a
+      // verified session and know the user's actual role.
+      const { error } = await authClient.signIn.email({
+        email: data.email as string,
+        password: data.password as string,
+        rememberMe: true,
+      })
 
-  console.log("Login successful:", SignInResponse)
-}
-const handleGoogleLogin = async () => {
-  try {
-    const result = await signIn.social({
-      provider: "google",
-      callbackURL: "/",
-      // errorCallbackURL: "/login",
-    });
+      if (error) {
+        toast.add({
+          title: error.message || "Invalid email or password.",
+          type: "error",
+        })
+        return
+      }
 
-    if (result.error) {
+      const session = await authClient.getSession()
+      const dashboardPath = getDashboardPath(session.data?.user?.role)
+
+      if (!dashboardPath) {
+        toast.add({
+          title:
+            "We couldn't determine your account role. Please contact support.",
+          type: "error",
+        })
+        return
+      }
+
+      toast.add({ title: "Login successful!", type: "success" })
+      router.push(dashboardPath)
+      router.refresh()
+    } catch (loginError) {
       toast.add({
-        title: "Google login failed!",
+        title:
+          loginError instanceof Error
+            ? loginError.message
+            : "Login failed. Please try again.",
         type: "error",
-      });
-    } else {
-      toast.add({
-        title: "Google login successful!",
-        type: "success",
-      });
+      })
+    } finally {
+      setIsSubmitting(false)
     }
-  } catch (error) {
-    console.log(error);
-
-    toast.add({
-      title: "Google login failed!",
-      type: "error",
-    });
   }
-};
+  const handleGoogleLogin = async () => {
+    if (isSubmitting) return
+
+    try {
+      // Use the configured client so baseURL/plugins match the rest of the app.
+      const result = await authClient.signIn.social({
+        provider: "google",
+        // Existing users land on a role-aware redirect handler. New users are
+        // rejected by Better Auth before account/session creation and sent
+        // to the register page with an explanation.
+        callbackURL: "/dashboard/redirect",
+        errorCallbackURL: "/register",
+      })
+
+      if (result.error) {
+        toast.add({
+          title:
+            result.error.message || "Google login failed. Please try again.",
+          type: "error",
+        })
+        return
+      }
+
+      toast.add({
+        title: "Redirecting to Google...",
+        type: "info",
+      })
+    } catch (error) {
+      console.error(error)
+
+      toast.add({
+        title: "Google login failed. Please try again.",
+        type: "error",
+      })
+    }
+  }
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -126,7 +167,6 @@ const handleGoogleLogin = async () => {
 
       {/* Login Form */}
       <form onSubmit={handleSubmit} className="mt-7 space-y-5">
-
         {/* Email */}
         <div>
           <label
@@ -189,10 +229,14 @@ const handleGoogleLogin = async () => {
         {/* Login Button */}
         <Button
           type="submit"
+          disabled={isSubmitting}
           className="h-12 w-full rounded-xl bg-emerald-600 font-semibold hover:bg-emerald-700"
         >
-          Login
-          <FaArrowRight className="ml-2" />
+          {isSubmitting ? (
+            <FaSpinner className="mr-2 animate-spin" aria-hidden="true" />
+          ) : null}
+          {isSubmitting ? "Logging in..." : "Login"}
+          {!isSubmitting ? <FaArrowRight className="ml-2" /> : null}
         </Button>
       </form>
 
@@ -209,6 +253,7 @@ const handleGoogleLogin = async () => {
         variant="outline"
         className="h-12 w-full rounded-xl"
         onClick={handleGoogleLogin}
+        disabled={isSubmitting}
       >
         <FcGoogle className="text-xl" />
         Continue with Google

@@ -1,7 +1,9 @@
+import { Suspense } from "react"
 import type { Metadata } from "next"
 import Image from "next/image"
 import { FaCheckCircle, FaHeadset, FaShieldAlt, FaTools } from "react-icons/fa"
 
+import GoogleSignInNotice from "@/components/forms/GoogleSignInNotice"
 import RegisterForm from "@/components/forms/RegisterForm"
 
 export const metadata: Metadata = {
@@ -20,6 +22,9 @@ const benefits = [
 export default function RegisterPage() {
   return (
     <main className="relative isolate min-h-[calc(100dvh-4rem)] overflow-hidden bg-slate-50 lg:min-h-[calc(100dvh-4.5rem)]">
+      <Suspense fallback={null}>
+        <GoogleSignInNotice />
+      </Suspense>
       <div
         aria-hidden="true"
         className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_1px_1px,rgba(15,23,42,0.06)_1px,transparent_0)] [mask-image:linear-gradient(to_bottom,black,transparent_92%)] [background-size:22px_22px]"

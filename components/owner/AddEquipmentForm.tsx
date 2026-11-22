@@ -1,61 +1,69 @@
-"use client";
+"use client"
 
-import Image from "next/image";
-import { useState } from "react";
-import { CloudUpload } from "lucide-react";
+import Image from "next/image"
+import { useState } from "react"
+import { CloudUpload } from "lucide-react"
 
-import { AddEquip } from "@/lib/actions/adEquip";
-import { authClient } from "@/lib/auth-client";
+import { AddEquip } from "@/lib/actions/adEquip"
+import { authClient } from "@/lib/auth-client"
 import EquipmentFormFields, {
   equipmentInputClass,
   equipmentLabelClass,
-} from "@/components/owner/EquipmentFormFields";
-import { showError, showSuccess } from "@/components/ui/toast";
+} from "@/components/owner/EquipmentFormFields"
+import { showError, showSuccess } from "@/components/ui/toast"
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024
 
 export default function AddEquipmentForm() {
-  const { data: session } = authClient.useSession();
+  const { data: session } = authClient.useSession()
 
-  const [image, setImage] = useState<File | null>(null);
-  const [preview, setPreview] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [image, setImage] = useState<File | null>(null)
+  const [preview, setPreview] = useState("")
+  const [loading, setLoading] = useState(false)
 
   // Image Change
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0]
 
-    if (!file) return;
+    if (!file) return
 
     if (!file.type.startsWith("image/")) {
-      showError("Please select an image file");
-      e.target.value = "";
-      return;
+      showError("Please select an image file")
+      e.target.value = ""
+      return
     }
 
-    setImage(file);
-    setPreview(URL.createObjectURL(file));
-  };
+    if (file.size > MAX_IMAGE_SIZE) {
+      showError("Image must be smaller than 5 MB")
+      e.target.value = ""
+      return
+    }
+
+    setImage(file)
+    setPreview(URL.createObjectURL(file))
+  }
 
   // Form Submit
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+    e.preventDefault()
 
     // Store form reference before await
-    const form = e.currentTarget;
+    const form = e.currentTarget
 
     if (!image) {
-      showError("Please select an equipment image");
-      return;
+      showError("Please select an equipment image")
+      return
     }
 
     if (!session?.user) {
-      showError("Please login first");
-      return;
+      showError("Please login first")
+      return
     }
 
     try {
-      const formData = new FormData(form);
+      const formData = new FormData(form)
 
-      setLoading(true);
+      setLoading(true)
 
       formData.set(
         "ownerInfo",
@@ -63,30 +71,37 @@ export default function AddEquipmentForm() {
           name: session.user.name,
           email: session.user.email,
         })
-      );
+      )
 
-      formData.set("status", "Pending");
+      formData.set("status", "Pending")
 
-      const result = await AddEquip(formData);
+      const result = await AddEquip(formData)
 
-      console.log(result);
+      console.log(result)
 
-      showSuccess("Equipment added successfully!");
+      showSuccess("Equipment added successfully!")
 
       // Reset form
-      form.reset();
-      setImage(null);
-      setPreview("");
+      form.reset()
+      setImage(null)
+      setPreview("")
     } catch (error) {
-      console.error(error);
+      console.error(error)
 
-      showError(
+      const message =
         error instanceof Error ? error.message : "Failed to add equipment"
-      );
+
+      // A 413 means the upload still exceeds the Server Action body limit.
+      // Avoid showing React's minified server-component error to the user.
+      showError(
+        /413|body exceeded|minified react error/i.test(message)
+          ? "The image is too large to upload. Please use a smaller image (under 5 MB)."
+          : message
+      )
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="mx-auto w-full max-w-5xl">
@@ -213,8 +228,8 @@ export default function AddEquipmentForm() {
             type="reset"
             disabled={loading}
             onClick={() => {
-              setImage(null);
-              setPreview("");
+              setImage(null)
+              setPreview("")
             }}
             className="rounded-xl border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -231,5 +246,5 @@ export default function AddEquipmentForm() {
         </div>
       </form>
     </div>
-  );
+  )
 }

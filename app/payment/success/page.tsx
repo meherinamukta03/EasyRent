@@ -1,39 +1,43 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { CheckCircle2, Clock3, Package } from "lucide-react";
+import type { Metadata } from "next"
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { CheckCircle2, Clock3, Package } from "lucide-react"
 
-import { getMyBookingById } from "@/lib/actions/customer";
-import { requireRole } from "@/lib/auth-server";
-import { formatCurrency } from "@/lib/rental";
+import { getMyBookingById, verifyPayment } from "@/lib/actions/customer"
+import { requireRole } from "@/lib/auth-server"
+import { formatCurrency } from "@/lib/rental"
 
 export const metadata: Metadata = {
   title: "Payment Confirmation | EasyRent",
   description: "Stripe checkout completion status.",
-};
+}
 
 interface SuccessPageProps {
-  searchParams: Promise<{ bookingId?: string; session_id?: string }>;
+  searchParams: Promise<{ bookingId?: string; session_id?: string }>
 }
 
 export default async function PaymentSuccessPage({
   searchParams,
 }: SuccessPageProps) {
-  await requireRole("customer");
+  await requireRole("customer")
 
-  const { bookingId } = await searchParams;
+  const { bookingId, session_id: sessionId } = await searchParams
 
   if (!bookingId) {
-    notFound();
+    notFound()
   }
 
-  const booking = await getMyBookingById(bookingId);
+  // Never trust the redirect alone. Verify with Stripe through the backend
+  // first, then read the freshly stored status.
+  await verifyPayment(bookingId, sessionId)
+
+  const booking = await getMyBookingById(bookingId)
 
   if (!booking) {
-    notFound();
+    notFound()
   }
 
-  const isPaid = booking.paymentStatus === "Paid";
+  const isPaid = booking.paymentStatus === "Paid"
 
   return (
     <main className="min-h-screen bg-slate-50/70 px-4 py-12 sm:px-6">
@@ -62,8 +66,8 @@ export default async function PaymentSuccessPage({
           </h1>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             {isPaid
-              ? "Your payment has been received and your booking is confirmed."
-              : "Stripe has redirected you back. We are confirming your payment — refresh shortly to see the updated status."}
+              ? "Your payment has been received. Your booking stays Pending until the equipment owner accepts it."
+              : "Stripe has redirected you back. We are confirming your payment — this page updates automatically once Stripe confirms it."}
           </p>
 
           <div className="mt-6 space-y-2 rounded-xl bg-slate-50 p-5 text-left text-sm">
@@ -111,5 +115,5 @@ export default async function PaymentSuccessPage({
         </div>
       </div>
     </main>
-  );
+  )
 }

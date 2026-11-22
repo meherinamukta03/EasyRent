@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, type ChangeEvent, type FormEvent } from "react"
@@ -14,11 +13,10 @@ import {
   FaEyeSlash,
   FaArrowRight,
 } from "react-icons/fa"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { authClient } from "@/lib/auth-client"
-import { error } from "console"
 
 interface AuthFormData {
   name: string
@@ -66,25 +64,23 @@ export default function RegisterForm() {
 
     console.log("Register form data:", data)
 
+    const { data: signUpResponse, error: signUpError } =
+      await authClient.signUp.email({
+        name: data.name as string,
+        email: data.email,
+        password: data.password,
+        image: data.image || undefined,
+        role: data.role,
 
-      const { data: signUpResponse, error: signUpError } = await authClient.signUp.email({
-            name: data.name as string,
-            email: data.email,
-            password: data.password,
-            image: data.image || undefined,
-            role: data.role,
-        
-            callbackURL: "/",
-         
-        });
+        callbackURL: "/",
+      })
 
-        if(!signUpError){
-       router.refresh()
-       router.push('/')
-        }
+    if (!signUpError) {
+      router.refresh()
+      router.push("/dashboard/redirect")
+    }
 
-        console.log("signup response", signUpResponse, signUpError)
-
+    console.log("signup response", signUpResponse, signUpError)
   }
 
   return (
@@ -122,7 +118,6 @@ export default function RegisterForm() {
 
       {/* Register Form */}
       <form onSubmit={handleSubmit} className="mt-7 space-y-5">
-
         {/* Account type */}
         <fieldset>
           <legend className="mb-2 block text-sm font-medium text-slate-700">
@@ -235,9 +230,7 @@ export default function RegisterForm() {
             className="mb-2 flex items-center justify-between text-sm font-medium text-slate-700"
           >
             Profile Photo URL
-            <span className="text-xs font-normal text-slate-400">
-              Optional
-            </span>
+            <span className="text-xs font-normal text-slate-400">Optional</span>
           </label>
 
           <div className="flex h-12 items-center gap-3 rounded-xl border border-slate-200 px-3 focus-within:border-emerald-500">
@@ -312,8 +305,6 @@ export default function RegisterForm() {
         <span className="text-xs font-medium text-slate-400">OR</span>
         <hr className="flex-1 border-slate-200" />
       </div>
-
-      
 
       {/* Login Link */}
       <p className="mt-6 text-center text-sm text-slate-600">

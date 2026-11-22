@@ -1,36 +1,46 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { CreditCard, Loader2 } from "lucide-react";
+import { useState } from "react"
+import { CreditCard, Loader2 } from "lucide-react"
 
-import { Button } from "@/components/ui/button";
-import { showError, showSuccess } from "@/components/ui/toast";
-import { createCheckoutSession } from "@/lib/actions/customer";
-import { formatCurrency } from "@/lib/rental";
+import { Button } from "@/components/ui/button"
+import { showError, showSuccess } from "@/components/ui/toast"
+import { createCheckoutSession } from "@/lib/actions/customer"
+import { formatCurrency } from "@/lib/rental"
 
 interface PayButtonProps {
-  amount: number;
-  bookingId: string;
+  amount: number
+  bookingId: string
 }
 
 export default function PayButton({ amount, bookingId }: PayButtonProps) {
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   async function handlePay() {
-    if (isRedirecting) return;
+    if (isRedirecting) return
 
-    setIsRedirecting(true);
+    setIsRedirecting(true)
 
     try {
-      const checkout = await createCheckoutSession(bookingId);
+      const checkout = await createCheckoutSession(bookingId)
 
-      showSuccess("Opening secure Stripe checkout...");
-      window.location.href = checkout.checkoutUrl;
+      if (!checkout.ok) {
+        showError(checkout.message)
+        setIsRedirecting(false)
+        return
+      }
+
+      showSuccess("Opening secure Stripe checkout...")
+      window.location.href = checkout.data.checkoutUrl
     } catch (error) {
+      const rawMessage = error instanceof Error ? error.message : ""
+
       showError(
-        error instanceof Error ? error.message : "Could not start checkout"
-      );
-      setIsRedirecting(false);
+        /minified react error|digest/i.test(rawMessage)
+          ? "Could not start checkout. Please try again."
+          : rawMessage || "Could not start checkout"
+      )
+      setIsRedirecting(false)
     }
   }
 
@@ -56,7 +66,9 @@ export default function PayButton({ amount, bookingId }: PayButtonProps) {
         ) : (
           <CreditCard className="size-4" aria-hidden="true" />
         )}
-        {isRedirecting ? "Opening checkout..." : `Pay ${formatCurrency(amount)}`}
+        {isRedirecting
+          ? "Opening checkout..."
+          : `Pay ${formatCurrency(amount)}`}
       </Button>
 
       <p className="mt-3 text-center text-xs text-slate-500">
@@ -64,5 +76,5 @@ export default function PayButton({ amount, bookingId }: PayButtonProps) {
         checkout.
       </p>
     </div>
-  );
+  )
 }

@@ -1,6 +1,6 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound } from "next/navigation";
+import type { Metadata } from "next"
+import Link from "next/link"
+import { notFound } from "next/navigation"
 import {
   AlertCircle,
   CalendarClock,
@@ -8,50 +8,50 @@ import {
   Clock3,
   MapPin,
   Package,
-} from "lucide-react";
+} from "lucide-react"
 
-import PayButton from "@/components/payment/PayButton";
-import { getMyBookingById } from "@/lib/actions/customer";
-import { requireRole } from "@/lib/auth-server";
-import { formatCurrency } from "@/lib/rental";
+import PayButton from "@/components/payment/PayButton"
+import { getMyBookingById } from "@/lib/actions/customer"
+import { requireRole } from "@/lib/auth-server"
+import { formatCurrency } from "@/lib/rental"
 
-const PLACEHOLDER_IMAGE = "/images/equipment-placeholder.svg";
+const PLACEHOLDER_IMAGE = "/images/equipment-placeholder.svg"
 
 interface PaymentPageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>
 }
 
 export const metadata: Metadata = {
   title: "Payment | EasyRent",
   description: "Review your booking and payment status.",
-};
+}
 
 function formatDate(value?: string) {
-  if (!value) return "—";
+  if (!value) return "—"
 
-  const date = new Date(value);
+  const date = new Date(value)
 
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return "—"
 
   return date.toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  });
+  })
 }
 
 export default async function PaymentPage({ params }: PaymentPageProps) {
-  await requireRole("customer");
+  await requireRole("customer")
 
-  const { id } = await params;
+  const { id } = await params
 
-  let booking: Awaited<ReturnType<typeof getMyBookingById>> = null;
-  let loadFailed = false;
+  let booking: Awaited<ReturnType<typeof getMyBookingById>> = null
+  let loadFailed = false
 
   try {
-    booking = await getMyBookingById(id);
+    booking = await getMyBookingById(id)
   } catch {
-    loadFailed = true;
+    loadFailed = true
   }
 
   if (loadFailed) {
@@ -83,15 +83,15 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
           </div>
         </div>
       </main>
-    );
+    )
   }
 
   if (!booking) {
-    notFound();
+    notFound()
   }
 
-  const rentalType = booking.rentalType || "Daily";
-  const paymentStatus = booking.paymentStatus || "Pending";
+  const rentalType = booking.rentalType || "Daily"
+  const paymentStatus = booking.paymentStatus || "Pending"
 
   return (
     <main className="min-h-screen bg-slate-50/70">
@@ -107,7 +107,7 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
         <header className="mt-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs font-bold tracking-[0.2em] text-emerald-600 uppercase">
-              Booking confirmed
+              Secure checkout
             </p>
             <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
               Payment details
@@ -166,7 +166,10 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
               </div>
               <div className="flex items-center justify-between gap-4">
                 <dt className="flex items-center gap-1.5 text-slate-500">
-                  <MapPin className="size-4 text-emerald-600" aria-hidden="true" />
+                  <MapPin
+                    className="size-4 text-emerald-600"
+                    aria-hidden="true"
+                  />
                   Rental period
                 </dt>
                 <dd className="text-right font-semibold text-slate-900">
@@ -178,7 +181,9 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
           </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-sm font-bold text-slate-900">Payment summary</h2>
+            <h2 className="text-sm font-bold text-slate-900">
+              Payment summary
+            </h2>
             <div className="mt-5 rounded-xl bg-slate-50 p-5">
               <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
                 Total rental amount
@@ -206,7 +211,9 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
 
             <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
               Your booking is saved with a <strong>Pending</strong> payment
-              status. No payment has been taken yet.
+              status. After Stripe confirms your payment, the payment status
+              becomes Paid while the booking stays Pending until the equipment
+              owner accepts it.
             </div>
 
             <PayButton
@@ -217,5 +224,5 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
         </div>
       </div>
     </main>
-  );
+  )
 }

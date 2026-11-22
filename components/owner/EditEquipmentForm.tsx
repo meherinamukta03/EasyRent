@@ -1,23 +1,25 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { ArrowLeft, ImagePlus, Loader2, Save } from "lucide-react";
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { ArrowLeft, ImagePlus, Loader2, Save } from "lucide-react"
 
 import EquipmentFormFields, {
   equipmentInputClass,
   equipmentLabelClass,
-} from "@/components/owner/EquipmentFormFields";
-import { showError, showSuccess } from "@/components/ui/toast";
-import { updateMyEquipment } from "@/lib/actions/equipment";
-import { getEquipmentStatusLabel } from "@/types/equipment";
-import type { Equipment } from "@/types/equipment";
+} from "@/components/owner/EquipmentFormFields"
+import { showError, showSuccess } from "@/components/ui/toast"
+import { updateMyEquipment } from "@/lib/actions/equipment"
+import { getEquipmentStatusLabel } from "@/types/equipment"
+import type { Equipment } from "@/types/equipment"
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024
 
 interface EditEquipmentFormProps {
-  equipment: Equipment;
-  ownerName: string;
-  ownerEmail: string;
+  equipment: Equipment
+  ownerName: string
+  ownerEmail: string
 }
 
 export default function EditEquipmentForm({
@@ -25,60 +27,71 @@ export default function EditEquipmentForm({
   ownerName,
   ownerEmail,
 }: EditEquipmentFormProps) {
-  const router = useRouter();
+  const router = useRouter()
 
-  const [image, setImage] = useState<File | null>(null);
-  const [preview, setPreview] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [image, setImage] = useState<File | null>(null)
+  const [preview, setPreview] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  const currentImage = preview || equipment.image || "";
-  const status = getEquipmentStatusLabel(equipment.status);
+  const currentImage = preview || equipment.image || ""
+  const status = getEquipmentStatusLabel(equipment.status)
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0]
 
-    if (!file) return;
+    if (!file) return
 
     if (!file.type.startsWith("image/")) {
-      showError("Please select an image file");
-      e.target.value = "";
-      return;
+      showError("Please select an image file")
+      e.target.value = ""
+      return
     }
 
-    setImage(file);
-    setPreview(URL.createObjectURL(file));
-  };
+    if (file.size > MAX_IMAGE_SIZE) {
+      showError("Image must be smaller than 5 MB")
+      e.target.value = ""
+      return
+    }
+
+    setImage(file)
+    setPreview(URL.createObjectURL(file))
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+    e.preventDefault()
 
-    if (loading) return;
+    if (loading) return
 
     try {
-      const formData = new FormData(e.currentTarget);
-      formData.set("id", equipment._id);
+      const formData = new FormData(e.currentTarget)
+      formData.set("id", equipment._id)
 
       if (image) {
-        formData.set("image", image);
+        formData.set("image", image)
       }
 
-      setLoading(true);
+      setLoading(true)
 
-      await updateMyEquipment(formData);
+      await updateMyEquipment(formData)
 
-      showSuccess("Equipment updated successfully!");
-      router.push("/dashboard/owner/my-equipment");
-      router.refresh();
+      showSuccess("Equipment updated successfully!")
+      router.push("/dashboard/owner/my-equipment")
+      router.refresh()
     } catch (error) {
-      console.error(error);
+      console.error(error)
+
+      const message =
+        error instanceof Error ? error.message : "Failed to update equipment"
 
       showError(
-        error instanceof Error ? error.message : "Failed to update equipment"
-      );
+        /413|body exceeded|minified react error/i.test(message)
+          ? "The image is too large to upload. Please use a smaller image (under 5 MB)."
+          : message
+      )
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="mx-auto w-full max-w-5xl">
@@ -246,5 +259,5 @@ export default function EditEquipmentForm({
         </div>
       </form>
     </div>
-  );
+  )
 }

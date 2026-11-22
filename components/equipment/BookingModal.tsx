@@ -1,9 +1,9 @@
-"use client";
+"use client"
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { CalendarDays, Loader2, Package } from "lucide-react";
+import { useEffect, useMemo, useState, type FormEvent } from "react"
+import { CalendarDays, Loader2, Package } from "lucide-react"
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -11,59 +11,59 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { showError, showSuccess } from "@/components/ui/toast";
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { showError, showSuccess } from "@/components/ui/toast"
 import {
   checkBookingAvailability,
   createBooking,
   createCheckoutSession,
-} from "@/lib/actions/customer";
-import { calculateRentalQuote, formatCurrency } from "@/lib/rental";
-import type { AvailabilityResult } from "@/services/equipment.service";
+} from "@/lib/actions/customer"
+import { calculateRentalQuote, formatCurrency } from "@/lib/rental"
+import type { AvailabilityResult } from "@/services/equipment.service"
 
-const PLACEHOLDER_IMAGE = "/images/equipment-placeholder.svg";
+const PLACEHOLDER_IMAGE = "/images/equipment-placeholder.svg"
 
 interface BookingModalProps {
   equipment: {
-    id: string;
-    name: string;
-    image?: string;
-    rentalPrice?: number;
-    rentalType?: string;
-    quantity?: number;
-  };
+    id: string
+    name: string
+    image?: string
+    rentalPrice?: number
+    rentalType?: string
+    quantity?: number
+  }
 }
 
-type FieldErrors = Record<string, string>;
+type FieldErrors = Record<string, string>
 
 function todayInputValue() {
-  const now = new Date();
-  const offset = now.getTimezoneOffset() * 60_000;
+  const now = new Date()
+  const offset = now.getTimezoneOffset() * 60_000
 
-  return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+  return new Date(now.getTime() - offset).toISOString().slice(0, 10)
 }
 
 export default function BookingModal({ equipment }: BookingModalProps) {
-  const [open, setOpen] = useState(false);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [quantity, setQuantity] = useState("1");
-  const [contactNumber, setContactNumber] = useState("");
-  const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [notes, setNotes] = useState("");
-  const [errors, setErrors] = useState<FieldErrors>({});
+  const [open, setOpen] = useState(false)
+  const [startDate, setStartDate] = useState("")
+  const [endDate, setEndDate] = useState("")
+  const [quantity, setQuantity] = useState("1")
+  const [contactNumber, setContactNumber] = useState("")
+  const [deliveryAddress, setDeliveryAddress] = useState("")
+  const [notes, setNotes] = useState("")
+  const [errors, setErrors] = useState<FieldErrors>({})
   const [availability, setAvailability] = useState<AvailabilityResult | null>(
     null
-  );
-  const [availabilityLoading, setAvailabilityLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  )
+  const [availabilityLoading, setAvailabilityLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const rentalPrice = Number(equipment.rentalPrice ?? 0);
-  const rentalType = equipment.rentalType || "Daily";
-  const quantityValue = Number(quantity);
+  const rentalPrice = Number(equipment.rentalPrice ?? 0)
+  const rentalType = equipment.rentalType || "Daily"
+  const quantityValue = Number(quantity)
 
   const quote = useMemo(
     () =>
@@ -75,100 +75,100 @@ export default function BookingModal({ equipment }: BookingModalProps) {
         quantityValue
       ),
     [rentalPrice, rentalType, startDate, endDate, quantityValue]
-  );
+  )
 
   const availableQuantity = availability
     ? availability.availableQuantity
-    : Number(equipment.quantity ?? 0);
+    : Number(equipment.quantity ?? 0)
 
   function handleStartChange(value: string) {
-    setStartDate(value);
-    setAvailability(null);
+    setStartDate(value)
+    setAvailability(null)
   }
 
   function handleEndChange(value: string) {
-    setEndDate(value);
-    setAvailability(null);
+    setEndDate(value)
+    setAvailability(null)
   }
 
   useEffect(() => {
-    if (!startDate || !endDate) return;
+    if (!startDate || !endDate) return
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const start = new Date(startDate)
+    const end = new Date(endDate)
 
     if (
       Number.isNaN(start.getTime()) ||
       Number.isNaN(end.getTime()) ||
       end <= start
     ) {
-      return;
+      return
     }
 
-    let active = true;
+    let active = true
 
     const timer = setTimeout(() => {
-      setAvailabilityLoading(true);
+      setAvailabilityLoading(true)
 
       checkBookingAvailability(equipment.id, startDate, endDate)
         .then((result) => {
-          if (active) setAvailability(result);
+          if (active) setAvailability(result)
         })
         .catch(() => {
-          if (active) setAvailability(null);
+          if (active) setAvailability(null)
         })
         .finally(() => {
-          if (active) setAvailabilityLoading(false);
-        });
-    }, 400);
+          if (active) setAvailabilityLoading(false)
+        })
+    }, 400)
 
     return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [equipment.id, startDate, endDate]);
+      active = false
+      clearTimeout(timer)
+    }
+  }, [equipment.id, startDate, endDate])
 
   function validate() {
-    const nextErrors: FieldErrors = {};
-    const today = todayInputValue();
+    const nextErrors: FieldErrors = {}
+    const today = todayInputValue()
 
     if (!startDate) {
-      nextErrors.startDate = "Rental start date is required";
+      nextErrors.startDate = "Rental start date is required"
     } else if (startDate < today) {
-      nextErrors.startDate = "Rental start date cannot be in the past";
+      nextErrors.startDate = "Rental start date cannot be in the past"
     }
 
     if (!endDate) {
-      nextErrors.endDate = "Rental end date is required";
+      nextErrors.endDate = "Rental end date is required"
     } else if (startDate && endDate <= startDate) {
-      nextErrors.endDate = "Rental end date must be after the start date";
+      nextErrors.endDate = "Rental end date must be after the start date"
     }
 
     if (!Number.isInteger(quantityValue) || quantityValue < 1) {
-      nextErrors.quantity = "Enter a positive whole number";
+      nextErrors.quantity = "Enter a positive whole number"
     } else if (quantityValue > availableQuantity) {
-      nextErrors.quantity = `Only ${availableQuantity} unit(s) available for this period`;
+      nextErrors.quantity = `Only ${availableQuantity} unit(s) available for this period`
     }
 
     if (!/^\d{7,15}$/.test(contactNumber.replace(/[\s-]/g, ""))) {
-      nextErrors.contactNumber = "Enter a valid contact number";
+      nextErrors.contactNumber = "Enter a valid contact number"
     }
 
     if (deliveryAddress.trim().length < 5) {
-      nextErrors.deliveryAddress = "Enter a valid delivery address";
+      nextErrors.deliveryAddress = "Enter a valid delivery address"
     }
 
-    setErrors(nextErrors);
+    setErrors(nextErrors)
 
-    return Object.keys(nextErrors).length === 0;
+    return Object.keys(nextErrors).length === 0
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+    event.preventDefault()
 
-    if (isSubmitting || !validate()) return;
+    if (isSubmitting || !validate()) return
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
 
     try {
       // Re-check at confirmation time so a competing booking cannot slip in.
@@ -176,18 +176,18 @@ export default function BookingModal({ equipment }: BookingModalProps) {
         equipment.id,
         startDate,
         endDate
-      );
+      )
 
-      setAvailability(latest);
+      setAvailability(latest)
 
       if (latest.availableQuantity < quantityValue) {
         setErrors({
           quantity: `Only ${latest.availableQuantity} unit(s) available for this period`,
-        });
-        return;
+        })
+        return
       }
 
-      const booking = await createBooking({
+      const bookingResult = await createBooking({
         equipmentId: equipment.id,
         rentalStartDate: startDate,
         rentalEndDate: endDate,
@@ -195,26 +195,43 @@ export default function BookingModal({ equipment }: BookingModalProps) {
         contactNumber: contactNumber.trim(),
         deliveryAddress: deliveryAddress.trim(),
         notes: notes.trim(),
-      });
+      })
+
+      if (!bookingResult.ok) {
+        showError(bookingResult.message)
+        setErrors({ submit: bookingResult.message })
+        return
+      }
 
       // Only leave for Stripe once a real Checkout URL has been returned.
-      const checkout = await createCheckoutSession(booking._id);
+      const checkout = await createCheckoutSession(bookingResult.data._id)
 
-      showSuccess("Booking created. Redirecting to secure checkout...");
-      setOpen(false);
-      window.location.href = checkout.checkoutUrl;
+      if (!checkout.ok) {
+        showError(checkout.message)
+        setErrors({ submit: checkout.message })
+        return
+      }
+
+      showSuccess("Booking created. Redirecting to secure checkout...")
+      setOpen(false)
+      window.location.href = checkout.data.checkoutUrl
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to create booking";
+      const rawMessage = error instanceof Error ? error.message : ""
 
-      showError(message);
-      setErrors({ submit: message });
+      // Production hides Server Action error details. Never show that raw
+      // minified message to the customer.
+      const message = /minified react error|digest/i.test(rawMessage)
+        ? "We couldn't confirm this booking. Please check availability and try again."
+        : rawMessage || "Failed to create booking"
+
+      showError(message)
+      setErrors({ submit: message })
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
   }
 
-  const isSoldOut = Number(equipment.quantity ?? 0) < 1;
+  const isSoldOut = Number(equipment.quantity ?? 0) < 1
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -401,5 +418,5 @@ export default function BookingModal({ equipment }: BookingModalProps) {
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

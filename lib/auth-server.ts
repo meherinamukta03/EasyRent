@@ -2,39 +2,26 @@ import { cache } from "react"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
-export const USER_ROLES = ["customer", "owner", "admin"] as const
+import {
+  getDashboardPath,
+  isUserRole,
+  ROLE_DASHBOARD_PATHS,
+  USER_ROLES,
+  type UserRole,
+} from "@/lib/roles"
 
-export type UserRole = (typeof USER_ROLES)[number]
-
-/**
- * The landing page for each role. These are the primary dashboard pages that
- * already exist in the protected route group.
- */
-export const ROLE_DASHBOARD_PATHS: Record<UserRole, string> = {
-  customer: "/dashboard/customer/my-rentals",
-  owner: "/dashboard/owner/my-equipment",
-  admin: "/dashboard/admin/users",
-}
-
-export function isUserRole(value: unknown): value is UserRole {
-  return (
-    typeof value === "string" &&
-    (USER_ROLES as readonly string[]).includes(value)
-  )
-}
-
-export function normalizeUserRole(value: unknown): UserRole {
-  return isUserRole(value) ? value : "customer"
-}
-
-export function getDashboardPath(role: unknown) {
-  return ROLE_DASHBOARD_PATHS[normalizeUserRole(role)]
+export {
+  getDashboardPath,
+  isUserRole,
+  ROLE_DASHBOARD_PATHS,
+  USER_ROLES,
+  type UserRole,
 }
 
 const hasDatabase = Boolean(
   process.env.BETTER_AUTH_DB_URI ??
-    process.env.MONGODB_URI ??
-    process.env.DATABASE_URL
+  process.env.MONGODB_URI ??
+  process.env.DATABASE_URL
 )
 
 /**
@@ -79,10 +66,14 @@ export async function requireUser() {
 
 export async function requireRole(...allowedRoles: UserRole[]) {
   const session = await requireUser()
-  const role = normalizeUserRole(session.user.role)
 
-  if (!allowedRoles.includes(role)) {
-    redirect(getDashboardPath(role))
+  // A missing or unknown role is never treated as a default role.
+  if (!isUserRole(session.user.role)) {
+    redirect("/login")
+  }
+
+  if (!allowedRoles.includes(session.user.role)) {
+    redirect(getDashboardPath(session.user.role) ?? "/login")
   }
 
   return session

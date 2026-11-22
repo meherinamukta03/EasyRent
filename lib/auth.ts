@@ -1,9 +1,9 @@
-import { betterAuth } from "better-auth";
-import { MongoClient } from "mongodb";
-import { mongodbAdapter } from "@better-auth/mongo-adapter";
+import { betterAuth } from "better-auth"
+import { MongoClient } from "mongodb"
+import { mongodbAdapter } from "@better-auth/mongo-adapter"
 
-const client = new MongoClient(process.env.BETTER_AUTH_DB_URI as string);
-const db = client.db("EasyRent");
+const client = new MongoClient(process.env.BETTER_AUTH_DB_URI as string)
+const db = client.db("EasyRent")
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
@@ -29,7 +29,7 @@ export const auth = betterAuth({
           // Hook results are merged back into the payload, so a field can only
           // be blocked by rejecting the whole update.
           if ("role" in (user as Record<string, unknown>)) {
-            return false;
+            return false
           }
         },
       },
@@ -37,6 +37,32 @@ export const auth = betterAuth({
   },
 
   user: {
+    /**
+     * Google sign-in is only allowed for emails that already exist in the
+     * EasyRent users collection. This runs on the server during the OAuth
+     * callback, before any user row or session is created, so it cannot be
+     * bypassed by client-side checks. Existing users are unaffected: Better
+     * Auth links the Google identity to their existing account instead.
+     */
+    validateUserInfo: async ({ user, source }) => {
+      if (source.method !== "oauth" || source.action !== "create-user") return
+      if (source.oauth?.providerId !== "google") return
+
+      const email = String(user.email || "")
+        .trim()
+        .toLowerCase()
+      if (!email) return
+
+      const existingUser = await db.collection("user").findOne({ email })
+
+      if (existingUser) return
+
+      return {
+        error: "registration_required",
+        errorDescription:
+          "Please register first before signing in with Google.",
+      }
+    },
     additionalFields: {
       role: {
         type: ["customer", "owner", "admin"],
@@ -70,4 +96,4 @@ export const auth = betterAuth({
       requireLocalEmailVerified: false,
     },
   },
-});
+})

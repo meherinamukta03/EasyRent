@@ -58,7 +58,7 @@ export default function Footer() {
   return (
     <footer
       aria-label="Site footer"
-      className="relative isolate overflow-hidden bg-slate-950 text-slate-300"
+      className="relative isolate z-20 overflow-hidden bg-slate-950 text-slate-300"
     >
       <div
         aria-hidden="true"
