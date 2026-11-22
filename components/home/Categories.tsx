@@ -12,6 +12,7 @@ import {
   PartyPopper,
   RotateCcw,
   Tractor,
+  Wrench,
   Truck,
   type LucideIcon,
 } from "lucide-react";
@@ -80,6 +81,20 @@ const CATEGORY_DEFINITIONS: CategoryDefinition[] = [
     icon: PartyPopper,
     iconClass: "bg-rose-100 text-rose-700",
   },
+  {
+    label: "Tools & Hand Equipment",
+    values: ["Tools", "Tool", "Tools & Hand Equipment"],
+    description: "Hand tools and small equipment for everyday jobs.",
+    icon: Wrench,
+    iconClass: "bg-teal-100 text-teal-700",
+  },
+  {
+    label: "Other Equipment",
+    values: ["Other", "Others", "Other Equipment"],
+    description: "All the other gear listed by our owners.",
+    icon: Package,
+    iconClass: "bg-slate-100 text-slate-700",
+  },
 ];
 
 function buildCategories(raw: EquipmentCategoryCount[]): DisplayCategory[] {
@@ -90,7 +105,13 @@ function buildCategories(raw: EquipmentCategoryCount[]): DisplayCategory[] {
     }))
     .filter((entry) => entry.value && entry.count > 0);
 
-  return CATEGORY_DEFINITIONS.map((definition) => {
+  const knownValues = new Set(
+    CATEGORY_DEFINITIONS.flatMap((definition) =>
+      definition.values.map((value) => value.toLowerCase())
+    )
+  );
+
+  const defined = CATEGORY_DEFINITIONS.map((definition) => {
     const matches = counts.filter((entry) =>
       definition.values.some(
         (value) => value.toLowerCase() === entry.value.toLowerCase()
@@ -107,6 +128,22 @@ function buildCategories(raw: EquipmentCategoryCount[]): DisplayCategory[] {
       filterValue: primary?.value || definition.values[0],
     };
   }).filter((category) => category.count > 0);
+
+  // Any stored category without a curated definition still gets a card, so a
+  // newly added category is never silently hidden from the homepage.
+  const extras = counts
+    .filter((entry) => !knownValues.has(entry.value.toLowerCase()))
+    .map((entry) => ({
+      label: entry.value,
+      values: [entry.value],
+      description: "Equipment listed in this category.",
+      icon: Package,
+      iconClass: "bg-slate-100 text-slate-700",
+      count: entry.count,
+      filterValue: entry.value,
+    }));
+
+  return [...defined, ...extras];
 }
 
 function CategorySkeleton() {
