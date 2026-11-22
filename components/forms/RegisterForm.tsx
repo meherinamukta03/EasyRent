@@ -23,7 +23,6 @@ interface AuthFormData {
   email: string
   image: string
   password: string
-  role: "customer" | "owner"
 }
 
 export default function RegisterForm() {
@@ -59,7 +58,6 @@ export default function RegisterForm() {
       email: formData.get("email") as string,
       image: formData.get("image") as string,
       password: formData.get("password") as string,
-      role: formData.get("role") === "owner" ? "owner" : "customer",
     }
 
     console.log("Register form data:", data)
@@ -70,8 +68,9 @@ export default function RegisterForm() {
         email: data.email,
         password: data.password,
         image: data.image || undefined,
-        role: data.role,
 
+        // Role is never sent by the browser. The server assigns "customer" to
+        // every new account; only an admin can promote a user to owner/admin.
         callbackURL: "/",
       })
 
@@ -118,59 +117,19 @@ export default function RegisterForm() {
 
       {/* Register Form */}
       <form onSubmit={handleSubmit} className="mt-7 space-y-5">
-        {/* Account type */}
-        <fieldset>
-          <legend className="mb-2 block text-sm font-medium text-slate-700">
-            Joining EasyRent as
-          </legend>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="group flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3.5 transition-colors hover:border-emerald-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/60 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-emerald-600 has-[:focus-visible]:ring-offset-2">
-              <input
-                type="radio"
-                name="role"
-                value="customer"
-                defaultChecked
-                className="sr-only"
-              />
-
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition-colors group-has-[:checked]:bg-emerald-600 group-has-[:checked]:text-white">
-                <FaUser aria-hidden="true" className="size-4" />
-              </span>
-
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold text-slate-900">
-                  Customer
-                </span>
-                <span className="mt-0.5 block text-xs leading-5 text-slate-500">
-                  Book gear from local owners.
-                </span>
-              </span>
-            </label>
-
-            <label className="group flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3.5 transition-colors hover:border-emerald-200 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/60 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-emerald-600 has-[:focus-visible]:ring-offset-2">
-              <input
-                type="radio"
-                name="role"
-                value="owner"
-                className="sr-only"
-              />
-
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition-colors group-has-[:checked]:bg-emerald-600 group-has-[:checked]:text-white">
-                <FaTools aria-hidden="true" className="size-4" />
-              </span>
-
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold text-slate-900">
-                  Owner
-                </span>
-                <span className="mt-0.5 block text-xs leading-5 text-slate-500">
-                  Earn by renting out your gear.
-                </span>
-              </span>
-            </label>
-          </div>
-        </fieldset>
+        {/* Role is server-assigned: every new account starts as a customer.
+            An admin can promote an account to owner or admin later. */}
+        <div className="flex items-start gap-3 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3.5">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white">
+            <FaUser aria-hidden="true" className="size-4" />
+          </span>
+          <p className="text-xs leading-5 text-slate-600">
+            <span className="font-semibold text-slate-900">Customer account</span>
+            <br />
+            All new accounts start as customers. Owner and admin roles are
+            assigned by an administrator.
+          </p>
+        </div>
 
         {/* Name */}
         <div>

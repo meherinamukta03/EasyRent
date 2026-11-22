@@ -9,20 +9,21 @@ import {
   EQUIPMENT_RENTAL_TYPES,
 } from "@/constants/equipment"
 import { requireRole } from "@/lib/auth-server"
+import { backendFetch } from "@/lib/backend"
 import { isUserRole, type UserRole } from "@/lib/roles"
-import { getApiBaseUrl } from "@/services/equipment.service"
 import type {
   AdminEquipment,
   AdminEquipmentUpdateInput,
   AdminRentalsFilters,
   AdminRentalsResponse,
+  AdminAnalytics,
   AdminUser,
 } from "@/types/admin"
 
 /**
  * Every admin action verifies the Better Auth session AND the admin role on
- * the server before touching the backend. The backend independently checks a
- * shared secret that is never exposed to the browser.
+ * the server. The Express API independently verifies the JWT and the admin
+ * role before performing any of these operations.
  */
 async function requireAdminActor() {
   const session = await requireRole("admin")
@@ -32,41 +33,6 @@ async function requireAdminActor() {
   }
 
   return session.user
-}
-
-async function adminRequest<T>(
-  path: string,
-  actorId: string,
-  options: { method?: string; body?: unknown } = {}
-): Promise<T> {
-  const secret = process.env.ADMIN_API_SECRET
-
-  if (!secret) {
-    throw new Error("Admin API is not configured")
-  }
-
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    method: options.method ?? "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "x-admin-api-secret": secret,
-      "x-admin-user-id": actorId,
-    },
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
-    cache: "no-store",
-  })
-
-  const data = await response.json().catch(() => null)
-
-  if (!response.ok) {
-    throw new Error(
-      typeof data?.message === "string"
-        ? data.message
-        : "The admin request could not be completed"
-    )
-  }
-
-  return data as T
 }
 
 function cleanId(value: string) {
@@ -80,17 +46,14 @@ function cleanId(value: string) {
 export async function getAdminUsers(
   filters: { search?: string; role?: UserRole } = {}
 ): Promise<AdminUser[]> {
-  const actor = await requireAdminActor()
-  const params = new URLSearchParams()
+  await requireAdminActor()
 
-  if (filters.search?.trim()) params.set("search", filters.search.trim())
-  if (filters.role && isUserRole(filters.role)) params.set("role", filters.role)
-
-  const query = params.size ? `?${params.toString()}` : ""
-  const data = await adminRequest<{ users: AdminUser[] }>(
-    `/admin/users${query}`,
-    actor.id
-  )
+  const data = await backendFetch<{ users: AdminUser[] }>("/admin/users", {
+    searchParams: {
+      search: filters.search?.trim(),
+      role: filters.role && isUserRole(filters.role) ? filters.role : undefined,
+    },
+  })
 
   return Array.isArray(data.users) ? data.users : []
 }
@@ -108,9 +71,8 @@ export async function updateAdminUserRole(
     throw new Error("You cannot remove your own admin access")
   }
 
-  const data = await adminRequest<{ message?: string }>(
+  const data = await backendFetch<{ message?: string }>(
     `/admin/users/${encodeURIComponent(id)}/role`,
-    actor.id,
     { method: "PATCH", body: { role } }
   )
 
@@ -126,9 +88,8 @@ export async function deleteAdminUser(targetId: string): Promise<string> {
   if (!id) throw new Error("Invalid user")
   if (id === actor.id) throw new Error("You cannot delete your own account")
 
-  const data = await adminRequest<{ message?: string }>(
+  const data = await backendFetch<{ message?: string }>(
     `/admin/users/${encodeURIComponent(id)}`,
-    actor.id,
     { method: "DELETE" }
   )
 
@@ -144,18 +105,19 @@ export async function deleteAdminUser(targetId: string): Promise<string> {
 export async function getAdminEquipments(
   filters: { search?: string; status?: string } = {}
 ): Promise<AdminEquipment[]> {
-  const actor = await requireAdminActor()
-  const params = new URLSearchParams()
+  await requireAdminActor()
 
-  if (filters.search?.trim()) params.set("search", filters.search.trim())
-  if (filters.status && ADMIN_EQUIPMENT_STATUSES.includes(filters.status as never)) {
-    params.set("status", filters.status)
-  }
-
-  const query = params.size ? `?${params.toString()}` : ""
-  const data = await adminRequest<{ equipments: AdminEquipment[] }>(
-    `/admin/equipments${query}`,
-    actor.id
+  const data = await backendFetch<{ equipments: AdminEquipment[] }>(
+    "/admin/equipments",
+    {
+      searchParams: {
+        search: filters.search?.trim(),
+        status:
+          filters.status && ADMIN_EQUIPMENT_STATUSES.includes(filters.status as never)
+            ? filters.status
+            : undefined,
+      },
+    }
   )
 
   return Array.isArray(data.equipments) ? data.equipments : []
@@ -165,7 +127,7 @@ export async function setAdminEquipmentStatus(
   id: string,
   status: string
 ): Promise<string> {
-  const actor = await requireAdminActor()
+  await requireAdminActor()
   const equipmentId = cleanId(id)
 
   if (!equipmentId) throw new Error("Invalid equipment")
@@ -173,9 +135,8 @@ export async function setAdminEquipmentStatus(
     throw new Error("Please choose a valid equipment status")
   }
 
-  const data = await adminRequest<{ message?: string }>(
+  const data = await backendFetch<{ message?: string }>(
     `/admin/equipments/${encodeURIComponent(equipmentId)}/status`,
-    actor.id,
     { method: "PATCH", body: { status } }
   )
 
@@ -189,7 +150,7 @@ export async function setAdminEquipmentStatus(
 export async function updateAdminEquipment(
   input: AdminEquipmentUpdateInput
 ): Promise<string> {
-  const actor = await requireAdminActor()
+  await requireAdminActor()
   const id = cleanId(input?.id)
 
   if (!id) throw new Error("Invalid equipment")
@@ -225,9 +186,8 @@ export async function updateAdminEquipment(
     throw new Error("Please select a valid equipment condition")
   }
 
-  const data = await adminRequest<{ message?: string }>(
+  const data = await backendFetch<{ message?: string }>(
     `/admin/equipments/${encodeURIComponent(id)}`,
-    actor.id,
     {
       method: "PATCH",
       body: {
@@ -253,14 +213,13 @@ export async function updateAdminEquipment(
 }
 
 export async function deleteAdminEquipment(id: string): Promise<string> {
-  const actor = await requireAdminActor()
+  await requireAdminActor()
   const equipmentId = cleanId(id)
 
   if (!equipmentId) throw new Error("Invalid equipment")
 
-  const data = await adminRequest<{ message?: string }>(
+  const data = await backendFetch<{ message?: string }>(
     `/admin/equipments/${encodeURIComponent(equipmentId)}`,
-    actor.id,
     { method: "DELETE" }
   )
 
@@ -270,6 +229,12 @@ export async function deleteAdminEquipment(id: string): Promise<string> {
   return data.message || "Equipment deleted successfully"
 }
 
+export async function getAdminAnalytics(): Promise<AdminAnalytics> {
+  await requireAdminActor()
+
+  return backendFetch<AdminAnalytics>("/admin/analytics")
+}
+
 // ---------------------------------------------------------------------------
 // Rentals
 // ---------------------------------------------------------------------------
@@ -277,20 +242,17 @@ export async function deleteAdminEquipment(id: string): Promise<string> {
 export async function getAdminRentals(
   filters: AdminRentalsFilters = {}
 ): Promise<AdminRentalsResponse> {
-  const actor = await requireAdminActor()
-  const params = new URLSearchParams()
+  await requireAdminActor()
 
-  if (filters.search?.trim()) params.set("search", filters.search.trim())
-  if (filters.bookingStatus) params.set("bookingStatus", filters.bookingStatus)
-  if (filters.paymentStatus) params.set("paymentStatus", filters.paymentStatus)
-  if (filters.page && filters.page > 0) params.set("page", String(filters.page))
-  if (filters.limit && filters.limit > 0) params.set("limit", String(filters.limit))
-
-  const query = params.size ? `?${params.toString()}` : ""
-  const data = await adminRequest<AdminRentalsResponse>(
-    `/admin/rentals${query}`,
-    actor.id
-  )
+  const data = await backendFetch<AdminRentalsResponse>("/admin/rentals", {
+    searchParams: {
+      search: filters.search?.trim(),
+      bookingStatus: filters.bookingStatus,
+      paymentStatus: filters.paymentStatus,
+      page: filters.page,
+      limit: filters.limit,
+    },
+  })
 
   return {
     rentals: Array.isArray(data.rentals) ? data.rentals : [],
@@ -301,15 +263,11 @@ export async function getAdminRentals(
   }
 }
 
-/**
- * Only the booking status is changed. Payment status and Stripe records are
- * never touched here; the backend re-checks the allowed workflow transitions.
- */
 export async function updateAdminBookingStatus(
   id: string,
   bookingStatus: string
 ): Promise<string> {
-  const actor = await requireAdminActor()
+  await requireAdminActor()
   const bookingId = cleanId(id)
 
   if (!bookingId) throw new Error("Invalid booking")
@@ -317,9 +275,8 @@ export async function updateAdminBookingStatus(
     throw new Error("Please choose a valid booking status")
   }
 
-  const data = await adminRequest<{ message?: string }>(
+  const data = await backendFetch<{ message?: string }>(
     `/admin/rentals/${encodeURIComponent(bookingId)}/booking-status`,
-    actor.id,
     { method: "PATCH", body: { bookingStatus } }
   )
 

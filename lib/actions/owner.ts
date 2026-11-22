@@ -1,61 +1,25 @@
 "use server"
 
+import { backendFetch } from "@/lib/backend"
 import { requireRole } from "@/lib/auth-server"
-import { getApiBaseUrl } from "@/services/equipment.service"
 import type { OwnerRental } from "@/types/customer"
 
 /**
- * All actions derive the owner email from the verified server session.
- * The browser never supplies an email, so it cannot act as another owner.
+ * Ownership is derived from the verified JWT on the server. No email or id is
+ * accepted from the browser, so an owner can never act on another owner's data.
  */
-async function getCurrentOwner() {
-  const session = await requireRole("owner")
-
-  if (!session.user.email) {
-    throw new Error("Your account is missing an email address")
-  }
-
-  return session.user
+async function requireOwnerSession() {
+  return requireRole("owner")
 }
 
 export async function getOwnerRentals(): Promise<OwnerRental[]> {
-  const owner = await getCurrentOwner()
+  await requireOwnerSession()
 
-  const response = await fetch(
-    `${getApiBaseUrl()}/owner/rentals?email=${encodeURIComponent(owner.email)}`,
-    { cache: "no-store" }
+  const data = await backendFetch<{ rentals?: OwnerRental[] } | OwnerRental[]>(
+    "/owner/rentals"
   )
 
-  const data = await response.json().catch(() => null)
-
-  if (!response.ok) {
-    throw new Error(
-      typeof data?.message === "string"
-        ? data.message
-        : "Failed to load owner rentals"
-    )
-  }
-
-  return Array.isArray(data) ? (data as OwnerRental[]) : []
-}
-
-/** Confirms that the booking belongs to one of the signed-in owner's items. */
-async function assertOwnership(bookingId: string): Promise<string> {
-  const owner = await getCurrentOwner()
-  const id = String(bookingId || "").trim()
-
-  if (!id) {
-    throw new Error("Invalid booking")
-  }
-
-  const rentals = await getOwnerRentals()
-  const match = rentals.find((rental) => rental._id === id)
-
-  if (!match) {
-    throw new Error("Booking not found for your equipment")
-  }
-
-  return owner.email
+  return Array.isArray(data) ? data : Array.isArray(data.rentals) ? data.rentals : []
 }
 
 function parseResult(data: unknown, fallback: string) {
@@ -70,46 +34,43 @@ function parseResult(data: unknown, fallback: string) {
   return { message: fallback, refundStatus: undefined }
 }
 
+export interface OwnerAnalytics {
+  equipmentCount: number
+  rentalCount: number
+  pendingRequests: number
+  earnings: number
+}
+
+export async function getOwnerAnalytics(): Promise<OwnerAnalytics> {
+  await requireOwnerSession()
+
+  return backendFetch<OwnerAnalytics>("/owner/analytics")
+}
+
 export async function acceptOwnerBooking(bookingId: string) {
-  const ownerEmail = await assertOwnership(bookingId)
+  await requireOwnerSession()
+  const id = String(bookingId || "").trim()
 
-  const response = await fetch(
-    `${getApiBaseUrl()}/bookings/${encodeURIComponent(bookingId)}/accept`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ownerEmail }),
-      cache: "no-store",
-    }
+  if (!id) throw new Error("Invalid booking")
+
+  const data = await backendFetch<{ message?: string; refundStatus?: string }>(
+    `/bookings/${encodeURIComponent(id)}/accept`,
+    { method: "POST" }
   )
-
-  const data = await response.json().catch(() => null)
-
-  if (!response.ok) {
-    throw new Error(parseResult(data, "Failed to accept booking").message)
-  }
 
   return parseResult(data, "Booking accepted successfully")
 }
 
 export async function rejectOwnerBooking(bookingId: string) {
-  const ownerEmail = await assertOwnership(bookingId)
+  await requireOwnerSession()
+  const id = String(bookingId || "").trim()
 
-  const response = await fetch(
-    `${getApiBaseUrl()}/bookings/${encodeURIComponent(bookingId)}/reject`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ownerEmail }),
-      cache: "no-store",
-    }
+  if (!id) throw new Error("Invalid booking")
+
+  const data = await backendFetch<{ message?: string; refundStatus?: string }>(
+    `/bookings/${encodeURIComponent(id)}/reject`,
+    { method: "POST" }
   )
-
-  const data = await response.json().catch(() => null)
-
-  if (!response.ok) {
-    throw new Error(parseResult(data, "Failed to reject booking").message)
-  }
 
   return parseResult(data, "Booking rejected successfully")
 }

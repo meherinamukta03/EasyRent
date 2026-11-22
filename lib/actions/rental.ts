@@ -1,18 +1,16 @@
-const API = process.env.NEXT_PUBLIC_API_BASE_URL;
+"use server"
 
-export const getOwnerRentals = async (email: string) => {
-  const response = await fetch(
-    `${API}/owner/rentals?email=${encodeURIComponent(email)}`,
-  
-  );
+import { backendFetch } from "@/lib/backend"
+import { requireRole } from "@/lib/auth-server"
+import type { OwnerRental } from "@/types/customer"
 
-  const data = await response.json();
+/** Owner-scoped rentals. The owner identity comes from the verified JWT. */
+export const getOwnerRentals = async (): Promise<OwnerRental[]> => {
+  await requireRole("owner")
 
-  console.log("Owner Rentals:", data);
+  const data = await backendFetch<{ rentals?: OwnerRental[] } | OwnerRental[]>(
+    "/owner/rentals"
+  )
 
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to fetch rentals");
-  }
-
-  return data;
-};
+  return Array.isArray(data) ? data : Array.isArray(data.rentals) ? data.rentals : []
+}

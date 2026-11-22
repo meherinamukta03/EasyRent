@@ -24,6 +24,15 @@ export const auth = betterAuth({
    */
   databaseHooks: {
     user: {
+      /**
+       * Registration never decides the role. Every new account — including
+       * Google sign-ins — starts as a customer; only an admin can promote.
+       */
+      create: {
+        before: async (user) => ({
+          data: { ...user, role: "customer" },
+        }),
+      },
       update: {
         before: async (user) => {
           // Hook results are merged back into the payload, so a field can only

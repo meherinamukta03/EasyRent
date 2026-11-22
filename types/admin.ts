@@ -76,6 +76,13 @@ export interface AdminRentalsFilters {
   limit?: number
 }
 
+export interface AdminAnalytics {
+  userCount: number
+  equipment: { pending: number; approved: number; rejected: number }
+  rentalCount: number
+  revenue: number
+}
+
 export interface AdminRentalsResponse {
   rentals: AdminRental[]
   total: number
