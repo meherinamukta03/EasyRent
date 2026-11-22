@@ -3,6 +3,7 @@
 import { AlertCircle, RotateCcw } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
+import type { MonthlyStat } from "@/types/admin"
 
 type BadgeTone = "success" | "warning" | "danger" | "info" | "neutral"
 
@@ -190,6 +191,49 @@ export function EmptyState({
         {description}
       </p>
     </div>
+  )
+}
+
+export function MonthlyBars({
+  data,
+  valueKey = "bookings",
+  title,
+}: {
+  data: MonthlyStat[]
+  valueKey?: "bookings" | "amount"
+  title: string
+}) {
+  const max = Math.max(1, ...data.map((item) => item[valueKey]))
+
+  return (
+    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <h2 className="text-sm font-bold text-slate-900">{title}</h2>
+      <p className="mt-1 text-xs text-slate-500">Last 12 months</p>
+      <div className="mt-6 flex h-40 items-end gap-1.5 sm:gap-2.5">
+        {data.map((item) => {
+          const value = item[valueKey]
+          const height = Math.max(3, Math.round((value / max) * 100))
+
+          return (
+            <div
+              key={item.month}
+              className="group flex h-full min-w-0 flex-1 flex-col justify-end"
+              title={`${item.label}: ${
+                valueKey === "amount" ? formatCurrency(value) : value
+              }`}
+            >
+              <div
+                className="w-full rounded-t-md bg-emerald-500 transition-all duration-300 group-hover:bg-emerald-600"
+                style={{ height: `${height}%` }}
+              />
+              <span className="mt-2 truncate text-center text-[0.6rem] font-medium text-slate-400">
+                {item.label.split(" ")[0]}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </section>
   )
 }
 

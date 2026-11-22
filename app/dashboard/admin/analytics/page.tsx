@@ -1,6 +1,10 @@
 import type { Metadata } from "next"
 
-import { AdminPageHeading, formatCurrency } from "@/components/admin/AdminUI"
+import {
+  AdminPageHeading,
+  formatCurrency,
+  MonthlyBars,
+} from "@/components/admin/AdminUI"
 import { getAdminAnalytics } from "@/lib/actions/admin"
 import { requireRole } from "@/lib/auth-server"
 
@@ -14,12 +18,12 @@ export default async function AdminAnalyticsPage() {
   const stats = await getAdminAnalytics()
 
   const cards = [
-    { label: "Registered users", value: String(stats.userCount) },
-    { label: "Approved equipment", value: String(stats.equipment.approved) },
-    { label: "Pending review", value: String(stats.equipment.pending) },
-    { label: "Rejected equipment", value: String(stats.equipment.rejected) },
-    { label: "Total rentals", value: String(stats.rentalCount) },
-    { label: "Paid revenue", value: formatCurrency(stats.revenue) },
+    { label: "Total users", value: String(stats.totalUsers) },
+    { label: "Total equipment", value: String(stats.totalEquipment) },
+    { label: "Total bookings", value: String(stats.totalBookings) },
+    { label: "Pending approvals", value: String(stats.pendingApprovals) },
+    { label: "Completed rentals", value: String(stats.completedRentals) },
+    { label: "Total revenue", value: formatCurrency(stats.totalRevenue) },
   ]
 
   return (
@@ -42,6 +46,12 @@ export default async function AdminAnalyticsPage() {
           </div>
         ))}
       </section>
+
+      <MonthlyBars
+        data={stats.monthlyBookings}
+        title="Monthly bookings"
+        valueKey="bookings"
+      />
     </>
   )
 }

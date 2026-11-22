@@ -113,37 +113,42 @@ export default function LoginForm() {
   const handleGoogleLogin = async () => {
     if (isSubmitting) return
 
+    setIsSubmitting(true)
+
+    // Every unsuccessful Google attempt lands on /register with the same
+    // "register first" toast, whether Better Auth rejected it or the client
+    // call itself failed.
+    const registerFirstUrl =
+      "/register?error=registration_required&error_description=" +
+      encodeURIComponent("Please register first before signing in with Google.")
+
     try {
-      // Use the configured client so baseURL/plugins match the rest of the app.
       const result = await authClient.signIn.social({
         provider: "google",
-        // Existing users land on a role-aware redirect handler. Unregistered
-        // Google emails are rejected by Better Auth and sent to /register
-        // with a "please register first" toast.
         callbackURL: "/dashboard/redirect",
         errorCallbackURL: "/register",
       })
 
       if (result.error) {
-        toast.add({
-          title:
-            result.error.message || "Google login failed. Please try again.",
-          type: "error",
-        })
+        window.location.href = registerFirstUrl
         return
       }
 
-      toast.add({
-        title: "Redirecting to Google...",
-        type: "info",
-      })
+      const url = (result.data as { url?: string } | null)?.url
+
+      if (url) {
+        // Redirect explicitly instead of relying only on Better Auth's fetch
+        // plugin, so a swallowed navigation error cannot leave us stuck here.
+        window.location.href = url
+        return
+      }
+
+      toast.add({ title: "Redirecting to Google...", type: "info" })
     } catch (error) {
       console.error(error)
-
-      toast.add({
-        title: "Google login failed. Please try again.",
-        type: "error",
-      })
+      window.location.href = registerFirstUrl
+    } finally {
+      setIsSubmitting(false)
     }
   }
   return (

@@ -1,6 +1,10 @@
 import type { Metadata } from "next"
 
-import { AdminPageHeading, formatCurrency } from "@/components/admin/AdminUI"
+import {
+  AdminPageHeading,
+  formatCurrency,
+  MonthlyBars,
+} from "@/components/admin/AdminUI"
 import { getOwnerAnalytics } from "@/lib/actions/owner"
 import { requireRole } from "@/lib/auth-server"
 
@@ -14,10 +18,11 @@ export default async function OwnerAnalyticsPage() {
   const stats = await getOwnerAnalytics()
 
   const cards = [
-    { label: "My equipment", value: String(stats.equipmentCount) },
-    { label: "Rental bookings", value: String(stats.rentalCount) },
+    { label: "Listed equipment", value: String(stats.totalEquipment) },
+    { label: "Total bookings", value: String(stats.totalBookings) },
+    { label: "Completed rentals", value: String(stats.completedRentals) },
     { label: "Pending requests", value: String(stats.pendingRequests) },
-    { label: "Paid earnings", value: formatCurrency(stats.earnings) },
+    { label: "Total earnings", value: formatCurrency(stats.totalEarnings) },
   ]
 
   return (
@@ -41,6 +46,11 @@ export default async function OwnerAnalyticsPage() {
             </div>
           ))}
         </section>
+        <MonthlyBars
+          data={stats.monthlyEarnings}
+          title="Monthly earnings"
+          valueKey="amount"
+        />
       </div>
     </main>
   )

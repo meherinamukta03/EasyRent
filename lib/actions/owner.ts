@@ -2,6 +2,7 @@
 
 import { backendFetch } from "@/lib/backend"
 import { requireRole } from "@/lib/auth-server"
+import type { OwnerAnalytics } from "@/types/admin"
 import type { OwnerRental } from "@/types/customer"
 
 /**
@@ -32,13 +33,6 @@ function parseResult(data: unknown, fallback: string) {
   }
 
   return { message: fallback, refundStatus: undefined }
-}
-
-export interface OwnerAnalytics {
-  equipmentCount: number
-  rentalCount: number
-  pendingRequests: number
-  earnings: number
 }
 
 export async function getOwnerAnalytics(): Promise<OwnerAnalytics> {

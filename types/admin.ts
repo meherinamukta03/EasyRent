@@ -76,11 +76,37 @@ export interface AdminRentalsFilters {
   limit?: number
 }
 
+export interface MonthlyStat {
+  month: string
+  label: string
+  bookings: number
+  amount: number
+}
+
 export interface AdminAnalytics {
   userCount: number
-  equipment: { pending: number; approved: number; rejected: number }
+  totalUsers: number
+  totalEquipment: number
+  equipment: { total: number; pending: number; approved: number; rejected: number }
+  pendingApprovals: number
   rentalCount: number
+  totalBookings: number
+  completedRentals: number
   revenue: number
+  totalRevenue: number
+  monthlyBookings: MonthlyStat[]
+}
+
+export interface OwnerAnalytics {
+  equipmentCount: number
+  totalEquipment: number
+  rentalCount: number
+  totalBookings: number
+  pendingRequests: number
+  completedRentals: number
+  earnings: number
+  totalEarnings: number
+  monthlyEarnings: MonthlyStat[]
 }
 
 export interface AdminRentalsResponse {
