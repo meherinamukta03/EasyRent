@@ -8,18 +8,16 @@ import {
   ListChecks,
   Package,
   PackagePlus,
-  Plus,
   User,
   Users,
 } from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 
-import { authClient } from "@/lib/auth-client"
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
-  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
@@ -27,9 +25,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import Link from "next/link"
-
-type UserRole = "customer" | "owner" | "admin"
+import { authClient } from "@/lib/auth-client"
+import type { UserRole } from "@/lib/roles"
 
 type MenuItem = {
   id: string
@@ -78,7 +75,6 @@ const menuItemsByRole: Record<UserRole, MenuItem[]> = {
       url: "/dashboard/owner/my-rentals",
       icon: CalendarCheck,
     },
-    
     {
       id: "owner-profile",
       name: "Profile",
@@ -96,7 +92,7 @@ const menuItemsByRole: Record<UserRole, MenuItem[]> = {
     {
       id: "admin-equipment",
       name: "Equipment",
-      url: "/dashboard/admin/equipment",
+      url: "/dashboard/admin/equipments",
       icon: Package,
     },
     {
@@ -120,10 +116,17 @@ const menuItemsByRole: Record<UserRole, MenuItem[]> = {
   ],
 }
 
-export default  function DashBoardSidebar() {
-  const { data } = authClient.useSession()
-  const role = data?.user?.role
+const roleLabels: Record<UserRole, string> = {
+  customer: "Customer",
+  owner: "Equipment owner",
+  admin: "Administrator",
+}
 
+export default function DashBoardSidebar() {
+  const pathname = usePathname()
+  const { data } = authClient.useSession()
+
+  const role = data?.user?.role
   const menuItems: MenuItem[] =
     role && role in menuItemsByRole
       ? menuItemsByRole[role as UserRole]
@@ -134,23 +137,32 @@ export default  function DashBoardSidebar() {
       <SidebarHeader />
       <SidebarContent>
         <SidebarGroup>
-         
-          
-        
+          <SidebarGroupLabel className="px-3 text-[0.65rem] font-bold tracking-[0.16em] uppercase">
+            {role ? roleLabels[role as UserRole] : "Dashboard"}
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton render={<Link href={item.url} />}>
-                    <item.icon />
-                    <span>{item.name}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {menuItems.map((item) => {
+                const isActive =
+                  pathname === item.url || pathname.startsWith(`${item.url}/`)
+
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      render={<Link href={item.url} />}
+                      isActive={isActive}
+                      aria-current={isActive ? "page" : undefined}
+                    >
+                      <item.icon />
+                      <span>{item.name}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
-          
+          </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter />
     </Sidebar>
   )
 }

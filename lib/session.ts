@@ -2,6 +2,7 @@ import { headers } from "next/headers"
 import { auth } from "@/lib/auth"
 import { authClient } from "./auth-client"
 
+
 export async function getServerSession() {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -16,3 +17,4 @@ export const getClientSession = async () => {
 
   return session
 }
+

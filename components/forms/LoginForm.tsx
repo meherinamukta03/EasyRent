@@ -103,11 +103,11 @@ export default function LoginForm() {
       // Use the configured client so baseURL/plugins match the rest of the app.
       const result = await authClient.signIn.social({
         provider: "google",
-        // Existing users land on a role-aware redirect handler. New users are
-        // rejected by Better Auth before account/session creation and sent
-        // to the register page with an explanation.
+        // Existing users land on a role-aware redirect handler. Any failure
+        // (including "register first") returns to the login page, where the
+        // reason is shown and a Register link is already available.
         callbackURL: "/dashboard/redirect",
-        errorCallbackURL: "/register",
+        errorCallbackURL: "/login",
       })
 
       if (result.error) {

@@ -2,6 +2,8 @@ import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
   experimental: {
+    // Enables `unauthorized()` / `forbidden()` page interrupts for role checks.
+    authInterrupts: true,
     serverActions: {
       // Equipment images are uploaded through a Server Action as multipart
       // form data. The 1MB default rejects typical photos with React error

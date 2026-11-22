@@ -27,7 +27,7 @@ export default async function AdminDashboardPage() {
         {
           label: "Equipment",
           description: "Review and manage equipment listings.",
-          href: "/dashboard/admin/equipment",
+          href: "/dashboard/admin/equipments",
           icon: Package,
         },
         {

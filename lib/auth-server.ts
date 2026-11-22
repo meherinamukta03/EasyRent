@@ -1,6 +1,6 @@
 import { cache } from "react"
 import { headers } from "next/headers"
-import { redirect } from "next/navigation"
+import { forbidden, redirect } from "next/navigation"
 
 import {
   getDashboardPath,
@@ -9,6 +9,7 @@ import {
   USER_ROLES,
   type UserRole,
 } from "@/lib/roles"
+import { getSession } from "better-auth/api"
 
 export {
   getDashboardPath,
@@ -69,11 +70,13 @@ export async function requireRole(...allowedRoles: UserRole[]) {
 
   // A missing or unknown role is never treated as a default role.
   if (!isUserRole(session.user.role)) {
-    redirect("/login")
+    redirect("/unauthorized")
   }
 
+  // A signed-in user with the wrong role gets a real 403 access-denied page
+  // instead of a silent redirect. `forbidden()` throws, so nothing below runs.
   if (!allowedRoles.includes(session.user.role)) {
-    redirect(getDashboardPath(session.user.role) ?? "/login")
+    forbidden()
   }
 
   return session

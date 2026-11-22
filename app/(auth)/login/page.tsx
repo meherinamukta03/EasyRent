@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Image from "next/image"
+import { Suspense } from "react"
 
 import {
   FaCheckCircle,
@@ -8,6 +9,7 @@ import {
   FaTools,
 } from "react-icons/fa"
 
+import GoogleSignInNotice from "@/components/forms/GoogleSignInNotice"
 import LoginForm from "@/components/forms/LoginForm"
 
 
@@ -47,6 +49,9 @@ export default async function LoginPage() {
 
       <div className="mx-auto grid w-full max-w-7xl items-center gap-10 px-4 py-8 sm:px-6 sm:py-12 lg:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)] lg:gap-14 lg:px-8 lg:py-14">
         <section aria-labelledby="login-heading" className="min-w-0">
+          <Suspense fallback={null}>
+            <GoogleSignInNotice />
+          </Suspense>
           <div className="mx-auto w-full max-w-xl lg:mx-0">
             <LoginForm />
           </div>
