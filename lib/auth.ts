@@ -2,14 +2,28 @@ import { betterAuth } from "better-auth"
 import { MongoClient } from "mongodb"
 import { mongodbAdapter } from "@better-auth/mongo-adapter"
 
-const client = new MongoClient(process.env.BETTER_AUTH_DB_URI as string)
+const databaseUri = process.env.BETTER_AUTH_DB_URI ?? process.env.MONGODB_URI
+
+if (!databaseUri) {
+  throw new Error("BETTER_AUTH_DB_URI (or MONGODB_URI) is not configured")
+}
+
+const client = new MongoClient(databaseUri)
 const db = client.db("EasyRent")
 
 /** Shared connection for server-side checks (no new client/collection). */
 export const easyrentDb = db
 
+// Strip inline-comment fragments (e.g. "url# comment") and fall back to the
+// Vercel host so cookies use the correct protocol/domain in every environment.
+const configuredBaseURL =
+  process.env.BETTER_AUTH_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined)
+
+const baseURL = configuredBaseURL?.split("#")[0].trim()
+
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL,
+  baseURL,
 
   database: mongodbAdapter(db, {
     client,
