@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { CloudUpload } from "lucide-react"
 
@@ -15,6 +16,7 @@ import { showError, showSuccess } from "@/components/ui/toast"
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
 
 export default function AddEquipmentForm() {
+  const router = useRouter()
   const { data: session } = authClient.useSession()
 
   const [image, setImage] = useState<File | null>(null)
@@ -75,16 +77,14 @@ export default function AddEquipmentForm() {
 
       formData.set("status", "Pending")
 
-      const result = await AddEquip(formData)
-
-      console.log(result)
+      await AddEquip(formData)
 
       showSuccess("Equipment added successfully!")
 
-      // Reset form
-      form.reset()
-      setImage(null)
-      setPreview("")
+      // The new listing is Pending, so send the owner straight back to their
+      // equipment list where they can review it.
+      router.push("/dashboard/owner/my-equipment")
+      router.refresh()
     } catch (error) {
       console.error(error)
 
