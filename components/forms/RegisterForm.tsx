@@ -14,6 +14,7 @@ import {
   FaArrowRight,
   FaSpinner,
 } from "react-icons/fa"
+import GoogleSignInButton from "@/components/forms/GoogleSignInButton"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/toast"
 import { authClient } from "@/lib/auth-client"
@@ -291,6 +292,9 @@ export default function RegisterForm() {
         <span className="text-xs font-medium text-slate-400">OR</span>
         <hr className="flex-1 border-slate-200" />
       </div>
+
+      {/* Google sign-in — new accounts start as customers on the server */}
+      <GoogleSignInButton />
 
       {/* Login Link */}
       <p className="mt-6 text-center text-sm text-slate-600">

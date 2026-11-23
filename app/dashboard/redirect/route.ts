@@ -20,5 +20,12 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 
-  return NextResponse.redirect(new URL(dashboardPath, request.url))
+  const target = new URL(dashboardPath, request.url)
+  const authNotice = new URL(request.url).searchParams.get("auth")
+
+  if (authNotice === "success") {
+    target.searchParams.set("auth", "success")
+  }
+
+  return NextResponse.redirect(target)
 }

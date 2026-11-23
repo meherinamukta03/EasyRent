@@ -13,8 +13,7 @@ import {
   FaArrowRight,
   FaSpinner,
 } from "react-icons/fa"
-import { FcGoogle } from "react-icons/fc"
-
+import GoogleSignInButton from "@/components/forms/GoogleSignInButton"
 import { Button } from "@/components/ui/button"
 import { isEmailRegistered } from "@/lib/actions/auth"
 import { authClient } from "@/lib/auth-client"
@@ -106,47 +105,6 @@ export default function LoginForm() {
             : "Login failed. Please try again.",
         type: "error",
       })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-  const handleGoogleLogin = async () => {
-    if (isSubmitting) return
-
-    setIsSubmitting(true)
-
-    // Every unsuccessful Google attempt lands on /register with the same
-    // "register first" toast, whether Better Auth rejected it or the client
-    // call itself failed.
-    const registerFirstUrl =
-      "/register?error=registration_required&error_description=" +
-      encodeURIComponent("Please register first before signing in with Google.")
-
-    try {
-      const result = await authClient.signIn.social({
-        provider: "google",
-        callbackURL: "/dashboard/redirect",
-        errorCallbackURL: "/register",
-      })
-
-      if (result.error) {
-        window.location.href = registerFirstUrl
-        return
-      }
-
-      const url = (result.data as { url?: string } | null)?.url
-
-      if (url) {
-        // Redirect explicitly instead of relying only on Better Auth's fetch
-        // plugin, so a swallowed navigation error cannot leave us stuck here.
-        window.location.href = url
-        return
-      }
-
-      toast.add({ title: "Redirecting to Google...", type: "info" })
-    } catch (error) {
-      console.error(error)
-      window.location.href = registerFirstUrl
     } finally {
       setIsSubmitting(false)
     }
@@ -266,17 +224,8 @@ export default function LoginForm() {
         <hr className="flex-1 border-slate-200" />
       </div>
 
-      {/* Google Button - UI only */}
-      <Button
-        type="button"
-        variant="outline"
-        className="h-12 w-full rounded-xl"
-        onClick={handleGoogleLogin}
-        disabled={isSubmitting}
-      >
-        <FcGoogle className="text-xl" />
-        Continue with Google
-      </Button>
+      {/* Google sign-in — shared with the Register page */}
+      <GoogleSignInButton />
 
       {/* Register Link */}
       <p className="mt-6 text-center text-sm text-slate-600">

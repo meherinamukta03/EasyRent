@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { ShieldCheck } from "lucide-react"
 
+import GoogleLinkCard from "@/components/profile/GoogleLinkCard"
 import ProfileForm, { type ProfileUser } from "@/components/profile/ProfileForm"
 import { requireUser } from "@/lib/auth-server"
 
@@ -56,6 +58,9 @@ export default async function ProfilePage() {
         </header>
 
         <ProfileForm user={profileUser} />
+        <Suspense fallback={null}>
+          <GoogleLinkCard />
+        </Suspense>
       </div>
     </main>
   )

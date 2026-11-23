@@ -96,35 +96,17 @@ export const auth = betterAuth({
 
   user: {
     /**
-     * Google sign-in is only allowed for emails that already exist in the
-     * EasyRent users collection. This runs on the server during the OAuth
-     * callback, before any user row or session is created, so it cannot be
-     * bypassed by client-side checks. Existing users are unaffected: Better
-     * Auth links the Google identity to their existing account instead.
+     * Google is a trusted provider: it verifies the email address before
+     * Better Auth receives it, so a first-time Google sign-in may create a
+     * user. The `databaseHooks.user.create.before` hook above still forces the
+     * trusted `customer` role, and existing users are matched by verified
+     * email / linked account instead of being duplicated.
      */
-    validateUserInfo: async ({ user, source }) => {
-      if (source.method !== "oauth" || source.action !== "create-user") return
-      if (source.oauth?.providerId !== "google") return
-
-      const email = String(user.email || "")
-        .trim()
-        .toLowerCase()
-      if (!email) return
-
-      const existingUser = await db.collection("user").findOne({ email })
-
-      if (existingUser) return
-
-      return {
-        error: "registration_required",
-        errorDescription:
-          "Please register first before signing in with Google.",
-      }
-    },
     additionalFields: {
       role: {
+        // Never accept a role from the browser — not even on sign-up.
         type: ["customer", "owner", "admin"],
-        input: true,
+        input: false,
         defaultValue: "customer",
       },
       phone: {
@@ -151,7 +133,11 @@ export const auth = betterAuth({
     accountLinking: {
       enabled: true,
       trustedProviders: ["google"],
+      // Google already proves ownership of the email, so implicit linking is
+      // safe even when a legacy local account has no verified flag.
       requireLocalEmailVerified: false,
+      // Never overwrite a manually edited profile on a later Google login.
+      updateUserInfoOnLink: false,
     },
   },
 })

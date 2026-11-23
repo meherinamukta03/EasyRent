@@ -15,12 +15,20 @@ const messages: Record<string, string> = {
   access_denied: "Google sign-in was cancelled. Please try again.",
   social_account_exist:
     "This Google account is already linked to another EasyRent account.",
+  account_ownership_conflict:
+    "This Google account is already linked to another EasyRent account.",
+  // An orphaned account row points at a user that no longer exists. The root
+  // cause is diagnosed by scripts/check-orphaned-accounts.mjs (read-only).
   "unable to link account":
-    "Your Google account was linked to a removed account. Please contact support to repair it.",
+    "We couldn't link this Google account because its saved reference is no longer valid. Please try again; if it continues, contact support.",
   unable_to_link_account:
-    "Your Google account was linked to a removed account. Please contact support to repair it.",
+    "We couldn't link this Google account because its saved reference is no longer valid. Please try again; if it continues, contact support.",
   "account not linked":
-    "This Google email needs to be linked to your EasyRent account first. Please contact support.",
+    "Sign in with your email and password first, then link Google from your profile.",
+  user_not_found: "We couldn't find that account. Please register first.",
+  internal_server_error:
+    "Something went wrong while signing in with Google. Please try again.",
+  oauth_error: "Google sign-in failed. Please try again.",
   email_not_found: "Google did not return an email address. Please try again.",
   email_not_verified: "Please verify your Google email and try again.",
   invalid_code: "Your Google sign-in code expired. Please try again.",
