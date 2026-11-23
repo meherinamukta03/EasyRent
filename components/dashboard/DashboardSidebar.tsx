@@ -101,12 +101,7 @@ const menuItemsByRole: Record<UserRole, MenuItem[]> = {
       url: "/dashboard/admin/rentals",
       icon: ListChecks,
     },
-    {
-      id: "admin-analytics",
-      name: "Analytics",
-      url: "/dashboard/admin/analytics",
-      icon: BarChart3,
-    },
+    
     {
       id: "admin-profile",
       name: "Profile",
