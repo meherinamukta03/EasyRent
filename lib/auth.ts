@@ -22,40 +22,8 @@ const configuredBaseURL =
 
 const baseURL = configuredBaseURL?.split("#")[0].trim()
 
-/** Localhost URLs copied from `.env` must never win over a Vercel deployment. */
-function isLocalOrigin(url?: string) {
-  if (!url) return false
-  try {
-    const { hostname } = new URL(url)
-    return hostname === "localhost" || hostname === "127.0.0.1"
-  } catch {
-    return false
-  }
-}
-
-const vercelBaseURL = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : undefined
-
-// A stale `BETTER_AUTH_URL=http://localhost:3000` on Vercel would make Better
-// Auth trust the wrong origin and generate localhost callback URLs.
-const resolvedBaseURL =
-  isLocalOrigin(baseURL) && vercelBaseURL ? vercelBaseURL : baseURL
-
 export const auth = betterAuth({
-  baseURL: resolvedBaseURL,
-
-  /**
-   * Better Auth validates every request's Origin against `baseURL` plus this
-   * list. Vercel gives each deployment its own `*.vercel.app` host, so the
-   * whole namespace is trusted along with local development origins.
-   * Custom domains should be set as `BETTER_AUTH_URL` in Vercel instead.
-   */
-  trustedOrigins: [
-    "http://localhost:*",
-    "http://127.0.0.1:*",
-    "https://*.vercel.app",
-  ],
+  baseURL,
 
   database: mongodbAdapter(db, {
     client,
@@ -150,7 +118,7 @@ export const auth = betterAuth({
   account: {
     accountLinking: {
       enabled: true,
-      trustedProviders: ["google"],
+    trustedProviders: ["google"],
       requireLocalEmailVerified: false,
     },
   },
