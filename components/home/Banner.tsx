@@ -201,7 +201,7 @@ export default function Banner() {
                 src="/images/banner.png"
                 alt="Construction tools, a ladder, camera equipment, and a toolbox ready for rent"
                 fill
-                preload
+                fetchPriority="high"
                 sizes="(max-width: 1023px) 100vw, 50vw"
                 className="object-cover"
               />
