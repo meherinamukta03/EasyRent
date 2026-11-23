@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth"
-import { MongoClient, type Db } from "mongodb"
+import { MongoClient, type Collection, type Db } from "mongodb"
 import { mongodbAdapter } from "@better-auth/mongo-adapter"
 
 const databaseUri = process.env.BETTER_AUTH_DB_URI ?? process.env.MONGODB_URI
@@ -63,24 +63,85 @@ function getMongoState(): MongoState {
   return next
 }
 
-// Stable objects handed to Better Auth. Every property access is delegated to
-// the current live connection, so a closed topology is transparently replaced
-// without changing the auth configuration or any consumer import.
+const RETRYABLE_ERRORS = new Set([
+  "MongoTopologyClosedError",
+  "MongoNotConnectedError",
+  "MongoClientClosedError",
+  "MongoServerSelectionError",
+])
+
+function isRetryable(error: unknown) {
+  const name = (error as { name?: string } | null)?.name
+  return Boolean(name && RETRYABLE_ERRORS.has(name))
+}
+
+/**
+ * Calls a method on the current live object. If the driver reports that its
+ * topology was closed, replace the client and retry once inside the same
+ * request — so even the first request after a failed connect recovers.
+ */
+function delegate(resolve: () => object, key: PropertyKey) {
+  return (...args: unknown[]) => {
+    const run = () => {
+      const target = resolve()
+      const value = Reflect.get(target, key, target)
+
+      if (typeof value !== "function") return value
+      return value.apply(target, args)
+    }
+
+    const result = run()
+
+    if (result && typeof (result as Promise<unknown>).then === "function") {
+      return (result as Promise<unknown>).catch((error: unknown) => {
+        if (!isRetryable(error)) throw error
+        globalForMongo.__easyRentMongo = createMongoState()
+        return run()
+      })
+    }
+
+    return result
+  }
+}
+
+function liveProxy<T extends object>(resolve: () => T): T {
+  return new Proxy({} as T, {
+    get(_target, key) {
+      const value = Reflect.get(resolve() as object, key, resolve())
+      if (typeof value !== "function") return value
+      return delegate(resolve as () => object, key)
+    },
+  })
+}
+
+// Stable objects handed to Better Auth. All access is delegated to the current
+// live connection, so a closed topology is transparently replaced without
+// touching the auth config or any consumer import.
 const db = new Proxy({} as Db, {
   get(_target, key) {
-    const live = getMongoState().db
-    const value = Reflect.get(live, key, live)
-    return typeof value === "function" ? value.bind(live) : value
+    if (key === "collection") {
+      return (name: string) =>
+        new Proxy({} as Collection, {
+          get(_collectionTarget, collectionKey) {
+            const value = Reflect.get(
+              getMongoState().db.collection(name),
+              collectionKey,
+              getMongoState().db.collection(name)
+            )
+            if (typeof value !== "function") return value
+            return delegate(
+              () => getMongoState().db.collection(name),
+              collectionKey
+            )
+          },
+        })
+    }
+
+    return delegate(() => getMongoState().db, key)
   },
 }) as Db
 
-const client = new Proxy({} as MongoClient, {
-  get(_target, key) {
-    const live = getMongoState().client
-    const value = Reflect.get(live, key, live)
-    return typeof value === "function" ? value.bind(live) : value
-  },
-}) as MongoClient
+const client = liveProxy<MongoClient>(() => getMongoState().client)
 
 /** Shared connection for server-side checks (no new client/collection). */
 export const easyrentDb = db
