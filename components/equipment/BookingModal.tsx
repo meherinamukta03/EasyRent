@@ -36,6 +36,9 @@ interface BookingModalProps {
     quantity?: number
     availableQuantity?: number
   }
+  /** Only customer accounts may book; owners/admins get a toast on click. */
+  canBook: boolean
+  userRole?: string
 }
 
 type FieldErrors = Record<string, string>
@@ -47,7 +50,11 @@ function todayInputValue() {
   return new Date(now.getTime() - offset).toISOString().slice(0, 10)
 }
 
-export default function BookingModal({ equipment }: BookingModalProps) {
+export default function BookingModal({
+  equipment,
+  canBook,
+  userRole,
+}: BookingModalProps) {
   const [open, setOpen] = useState(false)
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
@@ -65,6 +72,7 @@ export default function BookingModal({ equipment }: BookingModalProps) {
   const rentalPrice = Number(equipment.rentalPrice ?? 0)
   const rentalType = equipment.rentalType || "Daily"
   const quantityValue = Number(quantity)
+  const bookingDeniedMessage = `You are not a customer. You are an ${userRole ?? "owner"}. Only customers can book equipment.`
 
   const quote = useMemo(
     () =>
@@ -169,6 +177,11 @@ export default function BookingModal({ equipment }: BookingModalProps) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
+    if (!canBook) {
+      showError(bookingDeniedMessage)
+      return
+    }
+
     if (isSubmitting || !validate()) return
 
     setIsSubmitting(true)
@@ -223,7 +236,7 @@ export default function BookingModal({ equipment }: BookingModalProps) {
 
       // Production hides Server Action error details. Never show that raw
       // minified message to the customer.
-      const message = /minified react error|digest/i.test(rawMessage)
+      const message = /minified react error|digest|NEXT_HTTP_ERROR_FALLBACK/i.test(rawMessage)
         ? "We couldn't confirm this booking. Please check availability and try again."
         : rawMessage || "Failed to create booking"
 
@@ -242,7 +255,13 @@ export default function BookingModal({ equipment }: BookingModalProps) {
       <Button
         type="button"
         disabled={isSoldOut}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          if (!canBook) {
+            showError(bookingDeniedMessage)
+            return
+          }
+          setOpen(true)
+        }}
         className="h-11 px-5 disabled:cursor-not-allowed"
       >
         <CalendarDays aria-hidden="true" />

@@ -63,7 +63,8 @@ export default async function EquipmentDetailsPage({
   params,
 }: EquipmentDetailsPageProps) {
   // This route is private: guests are redirected by the shared auth helper.
-  await requireUser();
+  const session = await requireUser();
+  const canBook = session.user.role === "customer";
 
   const { id } = await params;
   const equipment = await getPublicEquipmentById(id);
@@ -183,6 +184,8 @@ export default async function EquipmentDetailsPage({
 
                 <div className="mt-5 flex flex-wrap items-center gap-3">
                   <BookingModal
+                    canBook={canBook}
+                    userRole={session.user.role}
                     equipment={{
                       id: equipment._id,
                       name: equipment.name,

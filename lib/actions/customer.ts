@@ -1,7 +1,7 @@
 "use server"
 
 import { backendFetch } from "@/lib/backend"
-import { requireRole, requireUser } from "@/lib/auth-server"
+import { requireUser } from "@/lib/auth-server"
 import {
   fetchEquipmentAvailability,
   type AvailabilityResult,
@@ -24,7 +24,16 @@ export type BookingActionResult<T> =
 // The session is verified here too; the Express API independently verifies
 // the JWT and derives the customer identity from it.
 async function getCurrentCustomer() {
-  const session = await requireRole("customer")
+  const session = await requireUser()
+
+  // Owners and admins must never be able to book. Check explicitly instead of
+  // calling forbidden(): the Server Action then returns a readable message
+  // rather than Next's internal `NEXT_HTTP_ERROR_FALLBACK;403` digest.
+  if (session.user.role !== "customer") {
+    throw new Error(
+      `You are not a customer. You are an ${session.user.role}. Only customers can book equipment.`
+    )
+  }
 
   if (!session.user.email) {
     throw new Error("Your account is missing an email address")
