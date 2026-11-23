@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth"
-import { MongoClient } from "mongodb"
+import { MongoClient, type Db } from "mongodb"
 import { mongodbAdapter } from "@better-auth/mongo-adapter"
 
 const databaseUri = process.env.BETTER_AUTH_DB_URI ?? process.env.MONGODB_URI
@@ -8,8 +8,79 @@ if (!databaseUri) {
   throw new Error("BETTER_AUTH_DB_URI (or MONGODB_URI) is not configured")
 }
 
-const client = new MongoClient(databaseUri)
-const db = client.db("EasyRent")
+const uri: string = databaseUri
+
+type MongoState = { client: MongoClient; db: Db }
+
+// One connection per runtime. `globalThis` keeps it shared across Next.js
+// module reloads and route bundles instead of creating a new client per file.
+const globalForMongo = globalThis as typeof globalThis & {
+  __easyRentMongo?: MongoState
+}
+
+function createMongoState(): MongoState {
+  const client = new MongoClient(uri, {
+    appName: "EasyRent",
+    retryWrites: true,
+    retryReads: true,
+    // Fail fast instead of holding a serverless invocation for 30s when the
+    // Atlas replica set cannot elect a primary.
+    serverSelectionTimeoutMS: 10_000,
+  })
+
+  return { client, db: client.db("EasyRent") }
+}
+
+/**
+ * The MongoDB driver closes its topology when the very first connect attempt
+ * fails (e.g. an Atlas failover). A module-level client would then be broken
+ * for every later request in that warm lambda — "MongoTopologyClosedError".
+ * Detect that state and build a fresh client on the next access.
+ */
+function isClosed(client: MongoClient) {
+  const internal = client as unknown as {
+    topology?: { s?: { state?: string } }
+    s?: { hasBeenClosed?: boolean }
+  }
+
+  // A failed initial connect leaves the topology in "closed"; an explicit
+  // close() removes it and sets hasBeenClosed. Both make the client unusable.
+  return (
+    internal.topology?.s?.state === "closed" ||
+    internal.s?.hasBeenClosed === true
+  )
+}
+
+function getMongoState(): MongoState {
+  const current = globalForMongo.__easyRentMongo
+
+  if (current && !isClosed(current.client)) {
+    return current
+  }
+
+  const next = createMongoState()
+  globalForMongo.__easyRentMongo = next
+  return next
+}
+
+// Stable objects handed to Better Auth. Every property access is delegated to
+// the current live connection, so a closed topology is transparently replaced
+// without changing the auth configuration or any consumer import.
+const db = new Proxy({} as Db, {
+  get(_target, key) {
+    const live = getMongoState().db
+    const value = Reflect.get(live, key, live)
+    return typeof value === "function" ? value.bind(live) : value
+  },
+}) as Db
+
+const client = new Proxy({} as MongoClient, {
+  get(_target, key) {
+    const live = getMongoState().client
+    const value = Reflect.get(live, key, live)
+    return typeof value === "function" ? value.bind(live) : value
+  },
+}) as MongoClient
 
 /** Shared connection for server-side checks (no new client/collection). */
 export const easyrentDb = db
