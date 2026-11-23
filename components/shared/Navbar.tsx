@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import {
   FaArrowRight,
   FaBars,
@@ -16,6 +16,7 @@ import {
 } from "react-icons/fa"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { toast } from "@/components/ui/toast"
 import { authClient } from "@/lib/auth-client"
 import { PROFILE_UPDATED_EVENT } from "@/lib/profile-events"
 import { cn } from "@/lib/utils"
@@ -51,7 +52,6 @@ function getInitials(name?: string | null) {
 
 export default function Navbar() {
   const pathname = usePathname()
-  const router = useRouter()
   const { data: session, isPending, refetch } = authClient.useSession()
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -100,10 +100,30 @@ export default function Navbar() {
     setIsLoggingOut(true)
 
     try {
-      await authClient.signOut()
+      const { error } = await authClient.signOut()
+
+      if (error) {
+        toast.add({
+          title: error.message || "Could not log out. Please try again.",
+          type: "error",
+        })
+        return
+      }
+
       setIsMobileMenuOpen(false)
-      router.push("/")
-      router.refresh()
+
+      // Full navigation drops cached client state and picks up the cleared
+      // session cookie — router.push() alone can leave the old UI in place.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.href = "/"
+    } catch (logoutError) {
+      toast.add({
+        title:
+          logoutError instanceof Error
+            ? logoutError.message
+            : "Could not log out. Please try again.",
+        type: "error",
+      })
     } finally {
       setIsLoggingOut(false)
     }
