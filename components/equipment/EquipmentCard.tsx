@@ -47,7 +47,8 @@ export default function EquipmentCard({
 }: EquipmentCardProps) {
   const [imageFailed, setImageFailed] = useState(false);
 
-  const available = isEquipmentAvailable(equipment.quantity);
+  const availableQuantity = equipment.availableQuantity ?? equipment.quantity;
+  const available = isEquipmentAvailable(availableQuantity);
   const imageSrc =
     !equipment.image || imageFailed ? PLACEHOLDER_IMAGE : equipment.image;
 
@@ -83,7 +84,7 @@ export default function EquipmentCard({
           ) : (
             <XCircle className="size-3.5" aria-hidden="true" />
           )}
-          {available ? "Available" : "Unavailable"}
+          {available ? "Available" : "Currently Unavailable"}
         </span>
 
         {showNewBadge ? (
@@ -110,9 +111,9 @@ export default function EquipmentCard({
             {equipment.rentalType || "Daily"} rental
           </span>
 
-          {typeof equipment.quantity === "number" ? (
+          {typeof availableQuantity === "number" ? (
             <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-600">
-              {equipment.quantity} available
+              {availableQuantity} of {equipment.quantity ?? availableQuantity} available
             </span>
           ) : null}
         </div>

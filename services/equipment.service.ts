@@ -127,6 +127,7 @@ export async function fetchPublicEquipmentById(
 
 export interface AvailabilityResult {
   stock: number
+  totalQuantity?: number
   reserved: number
   availableQuantity: number
   available: boolean

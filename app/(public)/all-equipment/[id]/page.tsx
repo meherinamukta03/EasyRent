@@ -161,9 +161,23 @@ export default async function EquipmentDetailsPage({
                     <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
                       Available quantity
                     </p>
-                    <p className="mt-1 text-2xl font-bold text-emerald-700">
-                      {equipment.quantity ?? 0}
+                    <p
+                      className={`mt-1 text-2xl font-bold ${
+                        (equipment.availableQuantity ?? equipment.quantity ?? 0) < 1
+                          ? "text-red-600"
+                          : "text-emerald-700"
+                      }`}
+                    >
+                      {equipment.availableQuantity ?? equipment.quantity ?? 0}
+                      <span className="ml-1 text-sm font-medium text-slate-500">
+                        / {equipment.quantity ?? 0} total
+                      </span>
                     </p>
+                    {(equipment.availableQuantity ?? equipment.quantity ?? 0) < 1 ? (
+                      <p className="mt-1 text-xs font-semibold text-red-600">
+                        Currently unavailable
+                      </p>
+                    ) : null}
                   </div>
                 </div>
 
@@ -176,6 +190,7 @@ export default async function EquipmentDetailsPage({
                       rentalPrice: equipment.rentalPrice,
                       rentalType: equipment.rentalType,
                       quantity: equipment.quantity,
+                      availableQuantity: equipment.availableQuantity,
                     }}
                   />
                   <FavoriteButton

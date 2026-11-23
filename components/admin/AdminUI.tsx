@@ -33,6 +33,7 @@ export function bookingStatusTone(status?: string): BadgeTone {
   if (value === "confirmed") return "success"
   if (value === "active") return "info"
   if (value === "completed") return "neutral"
+  if (value === "returned") return "success"
   if (value === "pending") return "warning"
   if (["rejected", "cancelled", "canceled"].includes(value)) return "danger"
   return "neutral"

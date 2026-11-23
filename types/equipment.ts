@@ -12,6 +12,7 @@ export interface Equipment {
   rentalPrice?: number;
   rentalType?: string;
   quantity?: number;
+  availableQuantity?: number;
   condition?: string;
   brand?: string;
   model?: string;

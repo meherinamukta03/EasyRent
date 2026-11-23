@@ -34,6 +34,7 @@ interface BookingModalProps {
     rentalPrice?: number
     rentalType?: string
     quantity?: number
+    availableQuantity?: number
   }
 }
 
@@ -79,7 +80,7 @@ export default function BookingModal({ equipment }: BookingModalProps) {
 
   const availableQuantity = availability
     ? availability.availableQuantity
-    : Number(equipment.quantity ?? 0)
+    : Number(equipment.availableQuantity ?? equipment.quantity ?? 0)
 
   function handleStartChange(value: string) {
     setStartDate(value)
@@ -144,7 +145,9 @@ export default function BookingModal({ equipment }: BookingModalProps) {
       nextErrors.endDate = "Rental end date must be after the start date"
     }
 
-    if (!Number.isInteger(quantityValue) || quantityValue < 1) {
+    if (availableQuantity < 1) {
+      nextErrors.quantity = "Currently unavailable — no units left for this period"
+    } else if (!Number.isInteger(quantityValue) || quantityValue < 1) {
       nextErrors.quantity = "Enter a positive whole number"
     } else if (quantityValue > availableQuantity) {
       nextErrors.quantity = `Only ${availableQuantity} unit(s) available for this period`
@@ -231,7 +234,8 @@ export default function BookingModal({ equipment }: BookingModalProps) {
     }
   }
 
-  const isSoldOut = Number(equipment.quantity ?? 0) < 1
+  const isSoldOut =
+    Number(equipment.availableQuantity ?? equipment.quantity ?? 0) < 1
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -272,6 +276,16 @@ export default function BookingModal({ equipment }: BookingModalProps) {
             </p>
           </div>
         </div>
+
+        {availability && !availability.available ? (
+          <div
+            role="alert"
+            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+          >
+            Currently unavailable for these dates — all units are reserved.
+            Please choose another period.
+          </div>
+        ) : null}
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="grid gap-4 sm:grid-cols-2">

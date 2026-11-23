@@ -35,6 +35,7 @@ import {
   acceptOwnerBooking,
   getOwnerRentals,
   rejectOwnerBooking,
+  returnOwnerBooking,
 } from "@/lib/actions/owner"
 import type { OwnerRental } from "@/types/customer"
 
@@ -83,6 +84,9 @@ function bookingClasses(status?: string) {
   }
   if (value === "active") {
     return "border-sky-200 bg-sky-50 text-sky-700"
+  }
+  if (value === "returned") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700"
   }
   if (value === "completed") {
     return "border-slate-200 bg-slate-100 text-slate-600"
@@ -177,6 +181,26 @@ export default function MyRentalsTable() {
         actionError instanceof Error
           ? actionError.message
           : "Failed to accept booking"
+      )
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function handleReturn(rental: OwnerRental) {
+    if (busyId) return
+
+    setBusyId(rental._id)
+
+    try {
+      const result = await returnOwnerBooking(rental._id)
+      showSuccess(result)
+      await loadRentals(true)
+    } catch (actionError) {
+      showError(
+        actionError instanceof Error
+          ? actionError.message
+          : "Failed to mark equipment as returned"
       )
     } finally {
       setBusyId(null)
@@ -363,6 +387,23 @@ export default function MyRentalsTable() {
                           >
                             <XCircle className="size-3.5" aria-hidden="true" />
                             Reject
+                          </Button>
+
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={
+                              !["Confirmed", "Active"].includes(
+                                rental.bookingStatus || ""
+                              ) || busyId === rental._id
+                            }
+                            title="Confirm the equipment is back to restore its quantity"
+                            onClick={() => void handleReturn(rental)}
+                            className="h-8 border-emerald-200 px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
+                          >
+                            <RotateCcw className="size-3.5" aria-hidden="true" />
+                            Return
                           </Button>
                         </div>
                       </TableCell>

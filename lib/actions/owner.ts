@@ -55,6 +55,21 @@ export async function acceptOwnerBooking(bookingId: string) {
   return parseResult(data, "Booking accepted successfully")
 }
 
+/** Owner confirms the item is back; inventory is restored exactly once. */
+export async function returnOwnerBooking(bookingId: string) {
+  await requireOwnerSession()
+  const id = String(bookingId || "").trim()
+
+  if (!id) throw new Error("Invalid booking")
+
+  const data = await backendFetch<{ message?: string }>(
+    `/bookings/${encodeURIComponent(id)}/return`,
+    { method: "POST" }
+  )
+
+  return data.message || "Equipment marked as returned"
+}
+
 export async function rejectOwnerBooking(bookingId: string) {
   await requireOwnerSession()
   const id = String(bookingId || "").trim()
